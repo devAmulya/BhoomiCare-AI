@@ -59,7 +59,7 @@ function setupEventListeners() {
   });
   
   // Input animations
-  document.querySelectorAll('input, select').forEach(input => {
+  document.querySelectorAll('input, select, textarea').forEach(input => {
     input.addEventListener('focus', function() {
       this.parentElement.style.transform = 'translateY(-2px)';
     });
@@ -78,7 +78,8 @@ async function handleFormSubmit(e) {
     cropName: formData.get('cropName').trim(),
     location: formData.get('location').trim(),
     sowingDate: formData.get('sowingDate') || null,
-    cropStage: formData.get('cropStage') || null
+    cropStage: formData.get('cropStage') || null,
+    observations: formData.get('observations') ? formData.get('observations').trim() : null
   };
   
   // Validation
@@ -162,6 +163,14 @@ function displayRecommendations(recommendations) {
   document.getElementById('irrigationAdvice').textContent = recommendations.irrigation;
   document.getElementById('cropCareAdvice').textContent = recommendations.cropCare;
   document.getElementById('weatherAlert').textContent = recommendations.weatherAlert;
+
+  const healthCard = document.getElementById('healthCard');
+  if (recommendations.healthAdvice) {
+    document.getElementById('healthAdvice').textContent = recommendations.healthAdvice;
+    healthCard.style.display = 'block';
+  } else {
+    healthCard.style.display = 'none';
+  }
 }
 
 async function loadPestAlerts(cropName) {
