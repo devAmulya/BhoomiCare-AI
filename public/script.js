@@ -10,6 +10,9 @@ const welcomeSection = document.getElementById('welcomeSection');
 const resultsSection = document.getElementById('resultsSection');
 const newQueryBtn = document.getElementById('newQueryBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
+const analyzePhotoBtn = document.getElementById('analyzePhotoBtn');
+const photoAnalyzeStatus = document.getElementById('photoAnalyzeStatus');
+const photoAnalysisResult = document.getElementById('photoAnalysisResult');
 
 // Weather icons mapping
 const weatherIcons = {
@@ -46,6 +49,9 @@ function setupEventListeners() {
   
   // New query button
   newQueryBtn.addEventListener('click', showWelcomeSection);
+
+  // Analyze crop photo
+  analyzePhotoBtn.addEventListener('click', handleAnalyzePhoto);
   
   // Crop suggestions
   document.querySelectorAll('.suggestion-btn').forEach(btn => {
@@ -68,6 +74,91 @@ function setupEventListeners() {
       this.parentElement.style.transform = '';
     });
   });
+}
+
+async function handleAnalyzePhoto() {
+  const fileInput = document.getElementById('cropImage');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    photoAnalyzeStatus.textContent = 'Choose a photo first.';
+    photoAnalyzeStatus.className = 'photo-analyze-status error';
+    return;
+  }
+
+  analyzePhotoBtn.disabled = true;
+  photoAnalyzeStatus.textContent = 'Analyzing...';
+  photoAnalyzeStatus.className = 'photo-analyze-status';
+  photoAnalysisResult.style.display = 'none';
+
+  try {
+    const formData = new FormData();
+    formData.append('crop_image', file);
+
+    const response = await fetch('/api/analyze-crop-image', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Analysis failed');
+    }
+
+    // Show the result
+    photoAnalyzeStatus.textContent = 'Done';
+    photoAnalyzeStatus.className = 'photo-analyze-status success';
+    photoAnalysisResult.innerHTML = `
+      <div class="pa-row"><strong>Detected crop:</strong> ${data.detectedCropType}</div>
+      <div class="pa-row"><strong>Health status:</strong> ${data.healthStatus}</div>
+      ${data.potentialIssues.length > 0
+        ? `<div class="pa-row"><strong>Possible issues:</strong> ${data.potentialIssues.join(', ')}</div>`
+        : ''}
+      ${data.notes ? `<div class="pa-row">${data.notes}</div>` : ''}
+    `;
+    photoAnalysisResult.style.display = 'block';
+
+    // Feed the result into the observations field so the advice engine
+    // (which matches on keywords like "pest signs" / "yellowing leaves")
+    // picks it up too, without overwriting anything the user already typed.
+    const observationsField = document.getElementById('observations');
+    const mappedText = mapAnalysisToObservationText(data);
+    if (mappedText) {
+      observationsField.value = observationsField.value
+        ? `${observationsField.value}; ${mappedText}`
+        : mappedText;
+    }
+
+  } catch (error) {
+    console.error('Photo analysis error:', error);
+    photoAnalyzeStatus.textContent = error.message || 'Analysis failed. Please try again.';
+    photoAnalyzeStatus.className = 'photo-analyze-status error';
+  } finally {
+    analyzePhotoBtn.disabled = false;
+  }
+}
+
+// Translates a photo analysis result into the same keyword phrases the
+// backend's getObservationAdvice() matches on, so a photo and a typed
+// observation lead to consistent advice.
+function mapAnalysisToObservationText(analysis) {
+  const status = (analysis.healthStatus || '').toLowerCase();
+  const issuesText = (analysis.potentialIssues || []).join(' ').toLowerCase();
+
+  if (status === 'healthy') {
+    return 'healthy growth';
+  }
+  if (issuesText.includes('deficiency')) {
+    return `yellowing leaves, nutrient deficiency (${analysis.potentialIssues.join(', ')})`;
+  }
+  if (issuesText.includes('pest') || issuesText.includes('infestation')) {
+    return `pest signs (${analysis.potentialIssues.join(', ')})`;
+  }
+  if (analysis.potentialIssues && analysis.potentialIssues.length > 0) {
+    return analysis.potentialIssues.join(', ');
+  }
+  return '';
 }
 
 async function handleFormSubmit(e) {
