@@ -255,6 +255,71 @@ body {
   margin-top: 10px;
 }
 
+.photo-analyze-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.analyze-photo-btn {
+  padding: 8px 16px;
+  background: var(--light-green);
+  color: var(--dark-green);
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.analyze-photo-btn:hover:not(:disabled) {
+  background: var(--primary-green);
+  color: var(--white);
+}
+
+.analyze-photo-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photo-analyze-status {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.photo-analyze-status.success {
+  color: var(--dark-green);
+  font-weight: 500;
+}
+
+.photo-analyze-status.error {
+  color: #DC2626;
+  font-weight: 500;
+}
+
+.photo-analysis-result {
+  margin-top: 10px;
+  padding: 12px 15px;
+  background: var(--background);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-green);
+  font-size: 0.9rem;
+}
+
+.photo-analysis-result .pa-row {
+  margin-bottom: 4px;
+}
+
+.photo-analysis-result .pa-row:last-child {
+  margin-bottom: 0;
+}
+
+.photo-analysis-result strong {
+  color: var(--text-dark);
+}
+
 .suggestion-btn {
   padding: 6px 12px;
   background: var(--light-green);

@@ -121,6 +121,19 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="cropImage">
+                                <span class="label-icon">📸</span>
+                                Crop Photo (Optional)
+                            </label>
+                            <input type="file" id="cropImage" name="cropImage" accept="image/*">
+                            <div class="photo-analyze-row">
+                                <button type="button" class="analyze-photo-btn" id="analyzePhotoBtn">Analyze Photo</button>
+                                <span id="photoAnalyzeStatus" class="photo-analyze-status"></span>
+                            </div>
+                            <div id="photoAnalysisResult" class="photo-analysis-result" style="display: none;"></div>
+                        </div>
+
+                        <div class="form-group">
                             <label for="observations">
                                 <span class="label-icon">🔍</span>
                                 Observations (Optional)
