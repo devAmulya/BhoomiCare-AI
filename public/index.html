@@ -120,6 +120,15 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label for="observations">
+                                <span class="label-icon">🔍</span>
+                                Observations (Optional)
+                            </label>
+                            <textarea id="observations" name="observations" rows="3"
+                                placeholder="e.g., yellowing leaves, new shoots, pest signs, healthy growth..."></textarea>
+                        </div>
+
                         <button type="submit" class="submit-btn" id="submitBtn">
                             <span class="btn-text">Get Smart Recommendations</span>
                             <span class="btn-loader" style="display: none;">
@@ -198,6 +207,16 @@
                         </div>
                         <div class="card-content">
                             <p id="weatherAlert">Checking weather conditions...</p>
+                        </div>
+                    </div>
+
+                    <!-- Health Check Card (only shown if observations were provided) -->
+                    <div class="result-card health-card" id="healthCard" style="display: none;">
+                        <div class="card-header">
+                            <h3>🔍 Health Check</h3>
+                        </div>
+                        <div class="card-content">
+                            <p id="healthAdvice"></p>
                         </div>
                     </div>
 

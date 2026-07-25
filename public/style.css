@@ -222,17 +222,21 @@ body {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   padding: 15px;
   border: 2px solid var(--border);
   border-radius: var(--border-radius);
   font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
   transition: var(--transition);
   background: var(--white);
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--primary-green);
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);

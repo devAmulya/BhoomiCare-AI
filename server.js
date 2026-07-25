@@ -32,6 +32,7 @@ function initializeDatabase() {
       location TEXT NOT NULL,
       sowing_date TEXT,
       crop_stage TEXT,
+      observations TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -72,7 +73,30 @@ function initializeDatabase() {
       console.error('Error creating tables:', err.message);
     } else {
       console.log('Database tables initialized');
+      migrateSchema();
       seedPestData();
+    }
+  });
+}
+
+// Migrate existing databases created before the `observations` column existed.
+// CREATE TABLE IF NOT EXISTS only applies to brand-new tables, so older
+// bhoomicare.db files need an explicit ALTER TABLE.
+function migrateSchema() {
+  db.all("PRAGMA table_info(user_queries)", (err, columns) => {
+    if (err) {
+      console.error('Migration check failed:', err.message);
+      return;
+    }
+    const hasObservations = columns.some(col => col.name === 'observations');
+    if (!hasObservations) {
+      db.run('ALTER TABLE user_queries ADD COLUMN observations TEXT', (alterErr) => {
+        if (alterErr) {
+          console.error('Migration error:', alterErr.message);
+        } else {
+          console.log('Migrated: added observations column to user_queries');
+        }
+      });
     }
   });
 }
@@ -166,8 +190,36 @@ async function getWeatherData(location) {
   }
 }
 
+// Ported from the old Flask /api/advice route: turns free-text farmer
+// observations ("yellowing leaves", "pest signs", etc.) into targeted advice.
+// Returns null when there's nothing useful to say, so callers can skip
+// showing a health card rather than displaying empty/generic filler.
+function getObservationAdvice(observations) {
+  if (!observations || !observations.trim()) {
+    return null;
+  }
+
+  const text = observations.toLowerCase();
+
+  if (text.includes('yellowing leaves') || text.includes('nutrient deficiency')) {
+    return '🟡 Signs point to nutrient deficiency (likely nitrogen or iron) or overwatering. Consider a balanced fertilizer application and check drainage.';
+  }
+  if (text.includes('new shoots') || text.includes('vigorous growth')) {
+    return '🌱 Vigorous growth detected — continue regular care, ensure adequate sunlight and nutrients, and keep an eye out for early pest activity.';
+  }
+  if (text.includes('pest signs') || text.includes('pest infestation')) {
+    return '🐛 Pest activity noted — inspect closely for common culprits (aphids, armyworms) and apply appropriate organic pest control promptly.';
+  }
+  if (text.includes('healthy growth')) {
+    return '✅ Your crop appears healthy — continue current practices and focus on preventative measures for common regional issues.';
+  }
+
+  // Any other observation text still gets a response, just a more general one
+  return '🔍 Based on your notes: maintain moderate irrigation and monitor for fungal growth if humidity is high. Consider organic fertilizer every two weeks.';
+}
+
 // AI-powered recommendations (simulated)
-function generateAIRecommendations(cropData, weatherData) {
+function generateAIRecommendations(cropData, weatherData, observations) {
   const { cropName, location, sowingDate, cropStage } = cropData;
   const { temperature, humidity, rainfall, windSpeed, description } = weatherData;
 
@@ -213,10 +265,13 @@ function generateAIRecommendations(cropData, weatherData) {
     weatherAlert = `🦠 High humidity and temperature favor fungal diseases. Apply preventive fungicide spray.`;
   }
 
+  const healthAdvice = getObservationAdvice(observations);
+
   return {
     irrigation: irrigationAdvice,
     cropCare: cropCareAdvice,
-    weatherAlert: weatherAlert || '✅ Weather conditions are favorable for crop growth.'
+    weatherAlert: weatherAlert || '✅ Weather conditions are favorable for crop growth.',
+    ...(healthAdvice ? { healthAdvice } : {})
   };
 }
 
@@ -228,13 +283,13 @@ app.get('/', (req, res) => {
 // Submit crop query
 app.post('/api/crop-query', async (req, res) => {
   try {
-    const { cropName, location, sowingDate, cropStage } = req.body;
+    const { cropName, location, sowingDate, cropStage, observations } = req.body;
 
     // Insert user query
     const queryResult = await new Promise((resolve, reject) => {
       db.run(
-        'INSERT INTO user_queries (crop_name, location, sowing_date, crop_stage) VALUES (?, ?, ?, ?)',
-        [cropName, location, sowingDate, cropStage],
+        'INSERT INTO user_queries (crop_name, location, sowing_date, crop_stage, observations) VALUES (?, ?, ?, ?, ?)',
+        [cropName, location, sowingDate, cropStage, observations || null],
         function(err) {
           if (err) reject(err);
           else resolve(this.lastID);
@@ -254,7 +309,8 @@ app.post('/api/crop-query', async (req, res) => {
     // Generate AI recommendations
     const recommendations = generateAIRecommendations(
       { cropName, location, sowingDate, cropStage },
-      weatherData
+      weatherData,
+      observations
     );
 
     // Store AI responses
