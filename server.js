@@ -3,10 +3,51 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const multer = require('multer');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Extensions mapped to the MIME types Gemini's vision API actually accepts.
+// Needed because some browsers/OSes send a generic mimetype (often
+// application/octet-stream) for certain image files — .jfif being the most
+// common culprit — even though the file is a perfectly normal JPEG.
+const IMAGE_EXTENSION_MIME_MAP = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.jfif': 'image/jpeg',
+  '.pjpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.heic': 'image/heic',
+  '.heif': 'image/heif'
+};
+
+function resolveImageMimeType(file) {
+  if (file.mimetype && file.mimetype.startsWith('image/') && file.mimetype !== 'application/octet-stream') {
+    return file.mimetype;
+  }
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  return IMAGE_EXTENSION_MIME_MAP[ext] || null;
+}
+
+// In-memory storage — we only need the buffer long enough to send it to the
+// vision API, no need to persist uploaded photos to disk.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const looksLikeImage = (file.mimetype && file.mimetype.startsWith('image/')) ||
+      IMAGE_EXTENSION_MIME_MAP[path.extname(file.originalname || '').toLowerCase()];
+    if (looksLikeImage) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -64,6 +105,15 @@ function initializeDatabase() {
       description TEXT,
       prevention TEXT,
       season TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS image_analyses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      detected_crop TEXT,
+      health_status TEXT,
+      issues TEXT,
+      notes TEXT,
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `;
@@ -334,7 +384,101 @@ app.post('/api/crop-query', async (req, res) => {
   }
 });
 
-// Get pest alerts for specific crop
+// Analyze a crop photo using Google Gemini's vision API (free tier — no
+// billing required, see https://aistudio.google.com/apikey).
+// This replaces the old Flask placeholder, which faked results by checking
+// for words like "sick" in the uploaded filename.
+app.post('/api/analyze-crop-image', upload.single('crop_image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image file provided.' });
+  }
+
+  const API_KEY = process.env.GEMINI_API_KEY;
+  if (!API_KEY) {
+    return res.status(500).json({
+      error: 'GEMINI_API_KEY is not configured on the server. Add it to your .env file (free key at https://aistudio.google.com/apikey).'
+    });
+  }
+
+  const mimeType = resolveImageMimeType(req.file);
+  if (!mimeType) {
+    return res.status(400).json({ error: 'Unrecognized image format. Try JPEG, PNG, WebP, or HEIC.' });
+  }
+
+  try {
+    const base64Image = req.file.buffer.toString('base64');
+    const prompt = `You are an agricultural crop health analyst. You will be shown a photo of a crop or plant. Respond with ONLY a JSON object in exactly this shape:
+{"detectedCropType": string, "healthStatus": "Healthy" | "Unhealthy" | "Affected" | "Uncertain", "potentialIssues": string[], "notes": string}
+Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation", "Nutrient Deficiency"). Use an empty array if you see no issues. If the image doesn't clearly show a crop/plant, or you can't confidently identify it, set detectedCropType to "Unknown" and explain briefly in notes.`;
+
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${API_KEY}`,
+      {
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64Image } }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: 'application/json'
+        }
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    const rawText = response.data.candidates[0].content.parts[0].text.trim();
+    // responseMimeType: 'application/json' should already give clean JSON,
+    // but strip markdown fences defensively in case the model wraps it anyway.
+    const cleaned = rawText.replace(/^```json\s*|^```\s*|```$/g, '').trim();
+
+    let analysis;
+    try {
+      analysis = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('Failed to parse vision model response as JSON:', rawText);
+      analysis = {
+        detectedCropType: 'Unknown',
+        healthStatus: 'Uncertain',
+        potentialIssues: [],
+        notes: 'Could not parse a structured result from the analysis. Raw response: ' + rawText.slice(0, 200)
+      };
+    }
+
+    // Log the analysis (useful for the dashboard later, and for debugging model output)
+    db.run(
+      'INSERT INTO image_analyses (detected_crop, health_status, issues, notes) VALUES (?, ?, ?, ?)',
+      [
+        analysis.detectedCropType,
+        analysis.healthStatus,
+        JSON.stringify(analysis.potentialIssues || []),
+        analysis.notes || null
+      ]
+    );
+
+    res.json({
+      detectedCropType: analysis.detectedCropType,
+      healthStatus: analysis.healthStatus,
+      potentialIssues: analysis.potentialIssues || [],
+      notes: analysis.notes || ''
+    });
+
+  } catch (error) {
+    if (error.response) {
+      console.error('Vision API error:', error.response.status, JSON.stringify(error.response.data));
+      const apiMessage = error.response.data && error.response.data.error && error.response.data.error.message;
+      if (error.response.status === 400 && apiMessage && apiMessage.toLowerCase().includes('api key')) {
+        return res.status(500).json({ error: 'Invalid GEMINI_API_KEY.' });
+      }
+      if (error.response.status === 429) {
+        return res.status(429).json({ error: 'Rate limited by the free Gemini tier. Please try again shortly.' });
+      }
+    } else {
+      console.error('Vision API error:', error.message);
+    }
+    res.status(500).json({ error: 'Failed to analyze image.' });
+  }
+});
 app.get('/api/pest-alerts/:crop', (req, res) => {
   const cropName = req.params.crop;
   const currentMonth = new Date().getMonth() + 1;
@@ -452,6 +596,15 @@ app.get('/api/dashboard', (req, res) => {
 
 // Error handling
 app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Image file is too large (10MB max).' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  }
+  if (err.message === 'Only image files are allowed') {
+    return res.status(400).json({ error: err.message });
+  }
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });

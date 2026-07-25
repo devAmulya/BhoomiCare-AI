@@ -12,6 +12,12 @@ conditions.
 - 📈 **5-Day Forecast** — real forecast data, aggregated to daily summaries
 - 🧑‍🌾 **Personalized Advice** — irrigation, crop care, and weather-alert
   recommendations generated from crop type, growth stage, and current weather
+- 🔍 **Observation-Based Health Advice** — free-text notes about your crop
+  (e.g. "yellowing leaves", "pest signs") get matched to targeted advice
+- 📸 **AI Crop Photo Analysis** — upload a photo and get the detected crop
+  type, health status, and possible issues via Google Gemini's vision API
+  (free tier, no cost to run) — results feed automatically into the
+  observation-based advice above
 - 🐛 **Pest Alerts** — seasonal pest/disease warnings from a seeded database,
   matched by crop and season
 - 📊 **Query Dashboard** — tracks total queries and most-asked-about crops
@@ -19,10 +25,8 @@ conditions.
 
 ## 🧭 Roadmap
 
-These were part of the original vision but aren't built yet — listed here so
-it's clear what's real today vs. planned:
+Not built yet — listed here so it's clear what's real today vs. planned:
 
-- 📸 AI-based crop photo analysis (health/disease detection)
 - 🌐 Multi-language UI (Hindi, Bengali, Tamil, Telugu, Marathi)
 - 🔐 User accounts with saved query history
 
@@ -31,7 +35,11 @@ it's clear what's real today vs. planned:
 - **Backend:** Node.js, Express
 - **Database:** SQLite (`sqlite3`)
 - **Frontend:** Vanilla HTML/CSS/JS (no framework)
-- **External API:** [OpenWeatherMap](https://openweathermap.org/api)
+- **External APIs:**
+  - [OpenWeatherMap](https://openweathermap.org/api) — weather & forecast
+  - [Google Gemini](https://aistudio.google.com/apikey) — crop photo analysis
+    (free tier, no credit card required — chosen specifically so this project
+    costs nothing to run)
 
 > An earlier version of this project also included a Flask/Python backend.
 > It's been removed to avoid maintaining two backends that had drifted out
@@ -40,7 +48,9 @@ it's clear what's real today vs. planned:
 
 ## 📦 Setup
 
-**Requirements:** Node.js 18+, npm, a free [OpenWeatherMap API key](https://openweathermap.org/api)
+**Requirements:** Node.js 18+, npm
+- Free [OpenWeatherMap API key](https://openweathermap.org/api)
+- Free [Gemini API key](https://aistudio.google.com/apikey) (no credit card — optional, only needed for photo analysis)
 
 ```bash
 # 1. Clone and install
@@ -50,7 +60,7 @@ npm install
 
 # 2. Configure environment
 cp .env.example .env
-# then edit .env and add your OPENWEATHER_API_KEY
+# then edit .env and add your OPENWEATHER_API_KEY and GEMINI_API_KEY
 
 # 3. Run
 npm start        # production
@@ -80,6 +90,7 @@ bhoomicare-ai/
 | Method | Route                              | Description                            |
 |--------|-------------------------------------|-----------------------------------------|
 | POST   | `/api/crop-query`                   | Submit crop query, get recommendations  |
+| POST   | `/api/analyze-crop-image`           | Analyze a crop photo (Gemini vision)    |
 | GET    | `/api/pest-alerts/:crop`            | Pest alerts for a crop/season           |
 | GET    | `/api/weather-forecast/:location`   | Current weather + 5-day forecast        |
 | GET    | `/api/dashboard`                    | Query stats (total, popular crops)      |
