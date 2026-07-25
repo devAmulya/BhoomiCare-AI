@@ -146,7 +146,9 @@ async function getWeatherData(location) {
       temperature: response.data.main.temp,
       humidity: response.data.main.humidity,
       rainfall: response.data.rain ? response.data.rain['1h'] || 0 : 0,
-      windSpeed: response.data.wind.speed,
+      // OpenWeatherMap returns wind speed in m/s under units=metric.
+      // Convert to km/h since that's what the UI displays and the alert thresholds assume.
+      windSpeed: response.data.wind.speed * 3.6,
       description: response.data.weather[0].description,
       icon: response.data.weather[0].icon
     };
@@ -298,26 +300,48 @@ app.get('/api/pest-alerts/:crop', (req, res) => {
   );
 });
 
-// Get weather forecast (mock 7-day forecast)
+// Get weather forecast (real 5-day forecast from OpenWeatherMap's free forecast API)
 app.get('/api/weather-forecast/:location', async (req, res) => {
+  const location = req.params.location;
+
   try {
-    const location = req.params.location;
-    const currentWeather = await getWeatherData(location);
-    
-    // Generate mock 7-day forecast
-    const forecast = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      
-      forecast.push({
-        date: date.toLocaleDateString('en-IN'),
-        temperature: currentWeather.temperature + (Math.random() * 6 - 3),
-        humidity: currentWeather.humidity + (Math.random() * 20 - 10),
-        rainfall: Math.random() * 10,
-        description: ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain'][Math.floor(Math.random() * 4)]
-      });
+    const API_KEY = process.env.OPENWEATHER_API_KEY;
+    if (!API_KEY) {
+      throw new Error('OPENWEATHER_API_KEY not configured');
     }
+
+    const currentWeather = await getWeatherData(location);
+
+    // Free-tier OpenWeatherMap only offers a 5-day / 3-hour-step forecast,
+    // not a true 7-day forecast, so we aggregate that into 5 daily summaries.
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(location)}&appid=${API_KEY}&units=metric`
+    );
+
+    const byDay = {};
+    response.data.list.forEach(entry => {
+      const day = entry.dt_txt.split(' ')[0]; // "YYYY-MM-DD"
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(entry);
+    });
+
+    const forecast = Object.keys(byDay).slice(0, 5).map(day => {
+      const entries = byDay[day];
+      // Prefer the reading closest to midday for a representative daily snapshot
+      const midday = entries.reduce((best, e) => {
+        const hour = parseInt(e.dt_txt.split(' ')[1].split(':')[0], 10);
+        const bestHour = parseInt(best.dt_txt.split(' ')[1].split(':')[0], 10);
+        return Math.abs(hour - 12) < Math.abs(bestHour - 12) ? e : best;
+      });
+
+      return {
+        date: new Date(day).toLocaleDateString('en-IN'),
+        temperature: midday.main.temp,
+        humidity: midday.main.humidity,
+        rainfall: midday.rain ? (midday.rain['3h'] || 0) : 0,
+        description: midday.weather[0].description
+      };
+    });
 
     res.json({
       current: currentWeather,
@@ -325,7 +349,23 @@ app.get('/api/weather-forecast/:location', async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch weather forecast' });
+    console.error('Forecast API error:', error.message);
+    // Fall back to a clearly-flagged estimate so the UI doesn't break without an API key
+    const currentWeather = await getWeatherData(location);
+    const forecast = [];
+    for (let i = 0; i < 5; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      forecast.push({
+        date: date.toLocaleDateString('en-IN'),
+        temperature: currentWeather.temperature,
+        humidity: currentWeather.humidity,
+        rainfall: 0,
+        description: currentWeather.description,
+        estimated: true
+      });
+    }
+    res.json({ current: currentWeather, forecast, note: 'Live forecast unavailable — showing current conditions as an estimate.' });
   }
 });
 
