@@ -1,12 +1,26 @@
-# Python cache files
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Database (contains local/runtime data, not source)
+bhoomicare.db
+*.sqlite
+*.sqlite3
+
+# Python (legacy, kept only if you revisit the Flask experiment)
 __pycache__/
 *.py[cod]
-
-# Environment file
-.env
-
-# VS Code settings
-.vscode/
-
-# Virtual environment folder 
 venv/
+.venv/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+*.log
