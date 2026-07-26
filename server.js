@@ -151,50 +151,10 @@ function migrateSchema() {
   });
 }
 
-// Seed pest data
+// Seed pest data — loaded from data/pestData.json so it's easy to expand
+// without touching application logic.
 function seedPestData() {
-  const pestData = [
-    {
-      crop: 'Rice',
-      pest: 'Brown Planthopper',
-      severity: 'High',
-      description: 'Small brown insects that suck plant juices, causing yellowing and stunted growth',
-      prevention: 'Use resistant varieties, maintain proper water levels, apply neem oil spray',
-      season: 'Monsoon'
-    },
-    {
-      crop: 'Wheat',
-      pest: 'Aphids',
-      severity: 'Medium',
-      description: 'Small green/black insects that cluster on leaves and stems',
-      prevention: 'Regular monitoring, use ladybird beetles, spray with soapy water',
-      season: 'Winter'
-    },
-    {
-      crop: 'Cotton',
-      pest: 'Bollworm',
-      severity: 'High',
-      description: 'Caterpillars that bore into cotton bolls, reducing yield significantly',
-      prevention: 'Use pheromone traps, Bt cotton varieties, biological control agents',
-      season: 'Summer'
-    },
-    {
-      crop: 'Sugarcane',
-      pest: 'Red Rot',
-      severity: 'High',
-      description: 'Fungal disease causing red discoloration and hollow stems',
-      prevention: 'Use disease-free seeds, proper drainage, crop rotation',
-      season: 'Monsoon'
-    },
-    {
-      crop: 'Maize',
-      pest: 'Fall Armyworm',
-      severity: 'High',
-      description: 'Caterpillars that feed on leaves, causing significant damage to young plants',
-      prevention: 'Early detection, use of pheromone traps, biological pesticides',
-      season: 'Monsoon'
-    }
-  ];
+  const pestData = require('./data/pestData.json');
 
   const insertPest = db.prepare(`
     INSERT OR IGNORE INTO pest_alerts (crop_name, pest_name, severity, description, prevention, season)
@@ -488,7 +448,11 @@ app.get('/api/pest-alerts/:crop', (req, res) => {
   else if (currentMonth >= 10 || currentMonth <= 2) season = 'Winter';
 
   db.all(
-    'SELECT * FROM pest_alerts WHERE crop_name LIKE ? OR season = ? ORDER BY severity DESC',
+    `SELECT * FROM pest_alerts
+     WHERE crop_name LIKE ?
+     ORDER BY
+       CASE WHEN season = ? THEN 0 ELSE 1 END,
+       CASE severity WHEN 'High' THEN 0 WHEN 'Medium' THEN 1 WHEN 'Low' THEN 2 ELSE 3 END`,
     [`%${cropName}%`, season],
     (err, rows) => {
       if (err) {

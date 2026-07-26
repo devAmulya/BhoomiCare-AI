@@ -79,6 +79,8 @@ bhoomicare-ai/
 │   ├── index.html
 │   ├── script.js
 │   └── style.css
+├── data/
+│   └── pestData.json # Seed data for pest_alerts (15 crops, 35 entries)
 ├── server.js         # Express app + API routes
 ├── package.json
 ├── .env.example

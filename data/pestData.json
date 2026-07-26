@@ -1,0 +1,51 @@
+[
+  { "crop": "Rice", "pest": "Brown Planthopper", "severity": "High", "description": "Small brown insects that suck plant juices, causing yellowing and stunted growth", "prevention": "Use resistant varieties, maintain proper water levels, apply neem oil spray", "season": "Monsoon" },
+  { "crop": "Rice", "pest": "Rice Blast", "severity": "High", "description": "Fungal disease causing diamond-shaped lesions on leaves, can destroy entire fields in favorable conditions", "prevention": "Use resistant varieties, avoid excess nitrogen, apply fungicide at early signs", "season": "Monsoon" },
+  { "crop": "Rice", "pest": "Stem Borer", "severity": "Medium", "description": "Larvae bore into stems causing the central shoot to dry out (deadheart symptom)", "prevention": "Remove and destroy affected tillers, use pheromone traps, timely transplanting", "season": "Summer" },
+
+  { "crop": "Wheat", "pest": "Aphids", "severity": "Medium", "description": "Small green/black insects that cluster on leaves and stems", "prevention": "Regular monitoring, use ladybird beetles, spray with soapy water", "season": "Winter" },
+  { "crop": "Wheat", "pest": "Yellow Rust", "severity": "High", "description": "Fungal disease causing yellow-orange stripes of pustules on leaves, spreads rapidly in cool humid weather", "prevention": "Use resistant varieties, timely fungicide application, avoid late sowing", "season": "Winter" },
+  { "crop": "Wheat", "pest": "Termites", "severity": "Medium", "description": "Damage roots and lower stems, especially in dry, sandy soils", "prevention": "Deep summer ploughing, seed treatment with recommended insecticide, avoid undecomposed manure", "season": "Summer" },
+
+  { "crop": "Cotton", "pest": "Bollworm", "severity": "High", "description": "Caterpillars that bore into cotton bolls, reducing yield significantly", "prevention": "Use pheromone traps, Bt cotton varieties, biological control agents", "season": "Summer" },
+  { "crop": "Cotton", "pest": "Whitefly", "severity": "Medium", "description": "Sap-sucking insects that also transmit viral diseases like leaf curl virus", "prevention": "Yellow sticky traps, neem-based sprays, avoid excess nitrogen fertilizer", "season": "Summer" },
+  { "crop": "Cotton", "pest": "Pink Bollworm", "severity": "High", "description": "Larvae feed inside bolls, making detection difficult until damage is done", "prevention": "Pheromone traps, destroy crop residue after harvest, timely sowing", "season": "Monsoon" },
+
+  { "crop": "Sugarcane", "pest": "Red Rot", "severity": "High", "description": "Fungal disease causing red discoloration and hollow stems", "prevention": "Use disease-free seeds, proper drainage, crop rotation", "season": "Monsoon" },
+  { "crop": "Sugarcane", "pest": "Early Shoot Borer", "severity": "Medium", "description": "Larvae bore into young shoots causing deadheart symptom in early growth stage", "prevention": "Remove and destroy affected shoots, use pheromone traps, timely planting", "season": "Summer" },
+  { "crop": "Sugarcane", "pest": "Whitefly", "severity": "Low", "description": "Sap-sucking pest that reduces plant vigor and sugar content over time", "prevention": "Remove lower dry leaves, encourage natural predators, neem oil spray", "season": "Winter" },
+
+  { "crop": "Maize", "pest": "Fall Armyworm", "severity": "High", "description": "Caterpillars that feed on leaves, causing significant damage to young plants", "prevention": "Early detection, use of pheromone traps, biological pesticides", "season": "Monsoon" },
+  { "crop": "Maize", "pest": "Stem Borer", "severity": "Medium", "description": "Larvae tunnel through stems, weakening plants and reducing grain fill", "prevention": "Destroy crop residue, use resistant varieties, timely sowing", "season": "Summer" },
+  { "crop": "Maize", "pest": "Downy Mildew", "severity": "High", "description": "Fungal disease causing stunted, chlorotic growth and poor cob development", "prevention": "Use disease-free seeds, seed treatment with fungicide, crop rotation", "season": "Monsoon" },
+
+  { "crop": "Bajra", "pest": "Downy Mildew", "severity": "High", "description": "Causes green ear disease and substantially reduces grain yield", "prevention": "Use resistant hybrids, seed treatment, remove infected plants early", "season": "Monsoon" },
+  { "crop": "Bajra", "pest": "Shoot Fly", "severity": "Medium", "description": "Larvae damage young seedlings, causing deadheart symptom", "prevention": "Timely sowing, seed treatment, remove and destroy affected seedlings", "season": "Summer" },
+
+  { "crop": "Jowar", "pest": "Shoot Fly", "severity": "Medium", "description": "Damages young seedlings similarly to its effect on bajra, reducing plant stand", "prevention": "Timely sowing with onset of monsoon, seed treatment, resistant varieties", "season": "Summer" },
+  { "crop": "Jowar", "pest": "Stem Borer", "severity": "Medium", "description": "Larvae bore into stems causing deadheart and reduced grain yield", "prevention": "Destroy stubble after harvest, use resistant varieties, timely sowing", "season": "Monsoon" },
+
+  { "crop": "Groundnut", "pest": "Leaf Miner", "severity": "Medium", "description": "Larvae mine inside leaves, reducing photosynthetic area and yield", "prevention": "Remove affected leaves, use light traps, neem-based sprays", "season": "Monsoon" },
+  { "crop": "Groundnut", "pest": "Collar Rot", "severity": "High", "description": "Fungal disease attacking the stem at the soil line, causing sudden wilting", "prevention": "Seed treatment with fungicide, avoid waterlogging, crop rotation", "season": "Summer" },
+
+  { "crop": "Soybean", "pest": "Girdle Beetle", "severity": "Medium", "description": "Larvae girdle stems and branches, causing them to wilt and break", "prevention": "Destroy crop residue, timely sowing, recommended insecticide spray", "season": "Monsoon" },
+  { "crop": "Soybean", "pest": "Yellow Mosaic Virus", "severity": "High", "description": "Transmitted by whiteflies, causes yellow mosaic patterns and stunted pods", "prevention": "Control whitefly vector, use resistant varieties, remove infected plants", "season": "Monsoon" },
+
+  { "crop": "Mustard", "pest": "Aphids", "severity": "High", "description": "Dense colonies on shoots and pods cause curling and stunted growth", "prevention": "Early sowing, yellow sticky traps, neem oil spray at first sign", "season": "Winter" },
+  { "crop": "Mustard", "pest": "White Rust", "severity": "Medium", "description": "Fungal disease causing white pustules on the underside of leaves", "prevention": "Use resistant varieties, avoid dense sowing, fungicide spray if needed", "season": "Winter" },
+
+  { "crop": "Potato", "pest": "Late Blight", "severity": "High", "description": "Fungal disease causing dark water-soaked lesions that can destroy a crop within days in cool, moist weather", "prevention": "Use certified disease-free seed tubers, preventive fungicide spray, avoid overhead irrigation", "season": "Winter" },
+  { "crop": "Potato", "pest": "Aphids", "severity": "Medium", "description": "Sap-sucking pests that also spread viral diseases between plants", "prevention": "Use virus-free seed tubers, remove volunteer plants, monitor regularly", "season": "Winter" },
+
+  { "crop": "Tomato", "pest": "Fruit Borer", "severity": "High", "description": "Larvae bore into developing fruits, causing rot and making them unmarketable", "prevention": "Pheromone traps, remove and destroy damaged fruits, biological control agents", "season": "Summer" },
+  { "crop": "Tomato", "pest": "Early Blight", "severity": "Medium", "description": "Fungal disease causing concentric-ringed spots on older leaves first", "prevention": "Crop rotation, avoid overhead watering, remove affected leaves promptly", "season": "Monsoon" },
+
+  { "crop": "Onion", "pest": "Thrips", "severity": "Medium", "description": "Tiny sap-sucking insects that cause silvery streaks on leaves and reduced bulb size", "prevention": "Blue sticky traps, avoid water stress, neem-based sprays", "season": "Summer" },
+  { "crop": "Onion", "pest": "Purple Blotch", "severity": "Medium", "description": "Fungal disease causing purplish lesions that expand and girdle leaves", "prevention": "Avoid dense planting, ensure good drainage, fungicide spray in humid weather", "season": "Monsoon" },
+
+  { "crop": "Chickpea", "pest": "Pod Borer", "severity": "High", "description": "Larvae bore into developing pods, feeding on the seeds inside", "prevention": "Pheromone traps, bird perches to encourage predation, biological pesticides", "season": "Winter" },
+  { "crop": "Chickpea", "pest": "Wilt", "severity": "Medium", "description": "Fungal disease causing yellowing and wilting, often plant by plant across a field", "prevention": "Use resistant varieties, crop rotation, avoid late sowing", "season": "Winter" },
+
+  { "crop": "Barley", "pest": "Aphids", "severity": "Low", "description": "Sap-sucking insects similar to those affecting wheat, generally less damaging to barley", "prevention": "Regular monitoring, encourage natural predators, soapy water spray if needed", "season": "Winter" },
+  { "crop": "Barley", "pest": "Rust", "severity": "Medium", "description": "Fungal disease causing orange-brown pustules on leaves and stems", "prevention": "Use resistant varieties, timely sowing, fungicide spray if severe", "season": "Winter" }
+]
