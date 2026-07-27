@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,21 +17,32 @@
                     <span class="logo-icon">🌾</span>
                     <div class="logo-text">
                         <h1>BhoomiCare AI</h1>
-                        <p>Smart Farming Assistant</p>
+                        <p data-i18n="app_tagline">Smart Farming Assistant</p>
                     </div>
                 </div>
                 <div class="header-features">
                     <div class="feature-item">
                         <span class="feature-icon">🌤️</span>
-                        <span>Weather Insights</span>
+                        <span data-i18n="feature_weather">Weather Insights</span>
                     </div>
                     <div class="feature-item">
                         <span class="feature-icon">🐛</span>
-                        <span>Pest Alerts</span>
+                        <span data-i18n="feature_pests">Pest Alerts</span>
                     </div>
                     <div class="feature-item">
                         <span class="feature-icon">💧</span>
-                        <span>Smart Irrigation</span>
+                        <span data-i18n="feature_irrigation">Smart Irrigation</span>
+                    </div>
+                    <div class="feature-item language-switcher-wrap">
+                        <span class="feature-icon">🌐</span>
+                        <select id="languageSwitcher" class="language-switcher" aria-label="Language">
+                            <option value="en">English</option>
+                            <option value="hi">हिंदी</option>
+                            <option value="bn">বাংলা</option>
+                            <option value="ta">தமிழ்</option>
+                            <option value="te">తెలుగు</option>
+                            <option value="mr">मराठी</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -44,59 +55,59 @@
             <!-- Welcome Section -->
             <section class="welcome-section" id="welcomeSection">
                 <div class="welcome-content">
-                    <h2>Welcome to Smart Farming</h2>
-                    <p>Get AI-powered crop advice based on real-time weather data and agricultural best practices</p>
+                    <h2 data-i18n="welcome_heading">Welcome to Smart Farming</h2>
+                    <p data-i18n="welcome_subtitle">Get AI-powered crop advice based on real-time weather data and agricultural best practices</p>
                     <div class="stats-grid">
                         <div class="stat-item">
                             <span class="stat-number" id="totalQueries">0</span>
-                            <span class="stat-label">Farmers Helped</span>
+                            <span class="stat-label" data-i18n="stat_farmers_helped">Farmers Helped</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number">24/7</span>
-                            <span class="stat-label">Available</span>
+                            <span class="stat-label" data-i18n="stat_available">Available</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number">15+</span>
-                            <span class="stat-label">Crop Types</span>
+                            <span class="stat-label" data-i18n="stat_crop_types">Crop Types</span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Crop Input Form -->
                 <div class="form-card">
-                    <h3>Get Personalized Crop Advice</h3>
+                    <h3 data-i18n="form_heading">Get Personalized Crop Advice</h3>
                     <form id="cropForm" class="crop-form">
                         <div class="form-group">
                             <label for="cropName">
                                 <span class="label-icon">🌾</span>
-                                Crop Name *
+                                <span data-i18n="label_crop_name">Crop Name *</span>
                             </label>
                             <input type="text" id="cropName" name="cropName" required 
-                                   placeholder="e.g., Rice, Wheat, Cotton">
+                                   placeholder="e.g., Rice, Wheat, Cotton" data-i18n-placeholder="placeholder_crop_name">
                             <div class="crop-suggestions">
-                                <button type="button" class="suggestion-btn" data-crop="Rice">Rice</button>
-                                <button type="button" class="suggestion-btn" data-crop="Wheat">Wheat</button>
-                                <button type="button" class="suggestion-btn" data-crop="Cotton">Cotton</button>
-                                <button type="button" class="suggestion-btn" data-crop="Sugarcane">Sugarcane</button>
-                                <button type="button" class="suggestion-btn" data-crop="Maize">Maize</button>
-                                <button type="button" class="suggestion-btn" data-crop="Bajra">Bajra</button>
+                                <button type="button" class="suggestion-btn" data-crop="Rice" data-i18n="crop_rice">Rice</button>
+                                <button type="button" class="suggestion-btn" data-crop="Wheat" data-i18n="crop_wheat">Wheat</button>
+                                <button type="button" class="suggestion-btn" data-crop="Cotton" data-i18n="crop_cotton">Cotton</button>
+                                <button type="button" class="suggestion-btn" data-crop="Sugarcane" data-i18n="crop_sugarcane">Sugarcane</button>
+                                <button type="button" class="suggestion-btn" data-crop="Maize" data-i18n="crop_maize">Maize</button>
+                                <button type="button" class="suggestion-btn" data-crop="Bajra" data-i18n="crop_bajra">Bajra</button>
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="location">
                                 <span class="label-icon">📍</span>
-                                Location *
+                                <span data-i18n="label_location">Location *</span>
                             </label>
                             <input type="text" id="location" name="location" required 
-                                   placeholder="e.g., Mumbai, Maharashtra">
+                                   placeholder="e.g., Mumbai, Maharashtra" data-i18n-placeholder="placeholder_location">
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="sowingDate">
                                     <span class="label-icon">📅</span>
-                                    Sowing Date (Optional)
+                                    <span data-i18n="label_sowing_date">Sowing Date (Optional)</span>
                                 </label>
                                 <input type="date" id="sowingDate" name="sowingDate">
                             </div>
@@ -104,18 +115,18 @@
                             <div class="form-group">
                                 <label for="cropStage">
                                     <span class="label-icon">🌱</span>
-                                    Crop Stage (Optional)
+                                    <span data-i18n="label_crop_stage">Crop Stage (Optional)</span>
                                 </label>
                                 <select id="cropStage" name="cropStage">
-                                    <option value="">Select stage</option>
-                                    <option value="Seed Preparation">Seed Preparation</option>
-                                    <option value="Sowing">Sowing</option>
-                                    <option value="Germination">Germination</option>
-                                    <option value="Vegetative Growth">Vegetative Growth</option>
-                                    <option value="Flowering">Flowering</option>
-                                    <option value="Fruiting">Fruiting</option>
-                                    <option value="Maturity">Maturity</option>
-                                    <option value="Harvesting">Harvesting</option>
+                                    <option value="" data-i18n="stage_select">Select stage</option>
+                                    <option value="Seed Preparation" data-i18n="stage_seed_prep">Seed Preparation</option>
+                                    <option value="Sowing" data-i18n="stage_sowing">Sowing</option>
+                                    <option value="Germination" data-i18n="stage_germination">Germination</option>
+                                    <option value="Vegetative Growth" data-i18n="stage_vegetative">Vegetative Growth</option>
+                                    <option value="Flowering" data-i18n="stage_flowering">Flowering</option>
+                                    <option value="Fruiting" data-i18n="stage_fruiting">Fruiting</option>
+                                    <option value="Maturity" data-i18n="stage_maturity">Maturity</option>
+                                    <option value="Harvesting" data-i18n="stage_harvesting">Harvesting</option>
                                 </select>
                             </div>
                         </div>
@@ -123,11 +134,11 @@
                         <div class="form-group">
                             <label for="cropImage">
                                 <span class="label-icon">📸</span>
-                                Crop Photo (Optional)
+                                <span data-i18n="label_crop_photo">Crop Photo (Optional)</span>
                             </label>
                             <input type="file" id="cropImage" name="cropImage" accept="image/*">
                             <div class="photo-analyze-row">
-                                <button type="button" class="analyze-photo-btn" id="analyzePhotoBtn">Analyze Photo</button>
+                                <button type="button" class="analyze-photo-btn" id="analyzePhotoBtn" data-i18n="btn_analyze_photo">Analyze Photo</button>
                                 <span id="photoAnalyzeStatus" class="photo-analyze-status"></span>
                             </div>
                             <div id="photoAnalysisResult" class="photo-analysis-result" style="display: none;"></div>
@@ -136,17 +147,18 @@
                         <div class="form-group">
                             <label for="observations">
                                 <span class="label-icon">🔍</span>
-                                Observations (Optional)
+                                <span data-i18n="label_observations">Observations (Optional)</span>
                             </label>
                             <textarea id="observations" name="observations" rows="3"
-                                placeholder="e.g., yellowing leaves, new shoots, pest signs, healthy growth..."></textarea>
+                                placeholder="e.g., yellowing leaves, new shoots, pest signs, healthy growth..."
+                                data-i18n-placeholder="placeholder_observations"></textarea>
                         </div>
 
                         <button type="submit" class="submit-btn" id="submitBtn">
-                            <span class="btn-text">Get Smart Recommendations</span>
+                            <span class="btn-text" data-i18n="btn_submit">Get Smart Recommendations</span>
                             <span class="btn-loader" style="display: none;">
                                 <span class="spinner"></span>
-                                Getting advice...
+                                <span data-i18n="btn_submit_loading">Getting advice...</span>
                             </span>
                         </button>
                     </form>
@@ -157,14 +169,14 @@
             <section class="results-section" id="resultsSection" style="display: none;">
                 <div class="results-header">
                     <h2 id="resultsTitle">Crop Advisory Dashboard</h2>
-                    <button class="new-query-btn" id="newQueryBtn">New Query</button>
+                    <button class="new-query-btn" id="newQueryBtn" data-i18n="btn_new_query">New Query</button>
                 </div>
 
                 <div class="results-grid">
                     <!-- Weather Card -->
                     <div class="result-card weather-card">
                         <div class="card-header">
-                            <h3>🌤️ Current Weather</h3>
+                            <h3>🌤️ <span data-i18n="card_current_weather">Current Weather</span></h3>
                             <span class="location-badge" id="weatherLocation"></span>
                         </div>
                         <div class="weather-content">
@@ -177,15 +189,15 @@
                             </div>
                             <div class="weather-details">
                                 <div class="weather-item">
-                                    <span class="weather-label">Humidity</span>
+                                    <span class="weather-label" data-i18n="weather_humidity">Humidity</span>
                                     <span class="weather-value" id="humidity">--%</span>
                                 </div>
                                 <div class="weather-item">
-                                    <span class="weather-label">Wind Speed</span>
+                                    <span class="weather-label" data-i18n="weather_wind_speed">Wind Speed</span>
                                     <span class="weather-value" id="windSpeed">-- km/h</span>
                                 </div>
                                 <div class="weather-item">
-                                    <span class="weather-label">Rainfall</span>
+                                    <span class="weather-label" data-i18n="weather_rainfall">Rainfall</span>
                                     <span class="weather-value" id="rainfall">-- mm</span>
                                 </div>
                             </div>
@@ -196,7 +208,7 @@
                     <!-- Irrigation Advice Card -->
                     <div class="result-card irrigation-card">
                         <div class="card-header">
-                            <h3>💧 Irrigation Advice</h3>
+                            <h3>💧 <span data-i18n="card_irrigation">Irrigation Advice</span></h3>
                         </div>
                         <div class="card-content">
                             <p id="irrigationAdvice">Getting personalized irrigation recommendations...</p>
@@ -206,7 +218,7 @@
                     <!-- Crop Care Card -->
                     <div class="result-card crop-care-card">
                         <div class="card-header">
-                            <h3>🌾 Crop Care Tips</h3>
+                            <h3>🌾 <span data-i18n="card_crop_care">Crop Care Tips</span></h3>
                         </div>
                         <div class="card-content">
                             <p id="cropCareAdvice">Analyzing crop requirements...</p>
@@ -216,7 +228,7 @@
                     <!-- Weather Alert Card -->
                     <div class="result-card alert-card">
                         <div class="card-header">
-                            <h3>⚠️ Weather Alerts</h3>
+                            <h3>⚠️ <span data-i18n="card_weather_alerts">Weather Alerts</span></h3>
                         </div>
                         <div class="card-content">
                             <p id="weatherAlert">Checking weather conditions...</p>
@@ -226,7 +238,7 @@
                     <!-- Health Check Card (only shown if observations were provided) -->
                     <div class="result-card health-card" id="healthCard" style="display: none;">
                         <div class="card-header">
-                            <h3>🔍 Health Check</h3>
+                            <h3>🔍 <span data-i18n="card_health_check">Health Check</span></h3>
                         </div>
                         <div class="card-content">
                             <p id="healthAdvice"></p>
@@ -236,7 +248,7 @@
                     <!-- Pest Alerts Card -->
                     <div class="result-card pest-card">
                         <div class="card-header">
-                            <h3>🐛 Pest Alerts</h3>
+                            <h3>🐛 <span data-i18n="card_pest_alerts">Pest Alerts</span></h3>
                         </div>
                         <div class="card-content">
                             <div id="pestAlerts">Loading pest information...</div>
@@ -246,7 +258,7 @@
                     <!-- Weather Forecast Card -->
                     <div class="result-card forecast-card">
                         <div class="card-header">
-                            <h3>📈 5-Day Forecast</h3>
+                            <h3>📈 <span data-i18n="card_forecast">5-Day Forecast</span></h3>
                         </div>
                         <div class="card-content">
                             <div id="weatherForecast">Loading forecast...</div>
@@ -262,30 +274,30 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>BhoomiCare AI</h4>
-                    <p>Empowering farmers with AI-driven agricultural insights for sustainable farming practices.</p>
+                    <h4 data-i18n="footer_brand">BhoomiCare AI</h4>
+                    <p data-i18n="footer_description">Empowering farmers with AI-driven agricultural insights for sustainable farming practices.</p>
                 </div>
                 <div class="footer-section">
-                    <h4>Features</h4>
+                    <h4 data-i18n="footer_features_heading">Features</h4>
                     <ul>
-                        <li>Weather-based Irrigation</li>
-                        <li>Pest Threat Alerts</li>
-                        <li>Crop Care Tips</li>
-                        <li>Seasonal Forecasting</li>
+                        <li data-i18n="footer_feature_1">Weather-based Irrigation</li>
+                        <li data-i18n="footer_feature_2">Pest Threat Alerts</li>
+                        <li data-i18n="footer_feature_3">Crop Care Tips</li>
+                        <li data-i18n="footer_feature_4">Seasonal Forecasting</li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Support</h4>
+                    <h4 data-i18n="footer_support_heading">Support</h4>
                     <ul>
-                        <li>Help Center</li>
-                        <li>Contact Us</li>
-                        <li>Feedback</li>
-                        <li>Community</li>
+                        <li data-i18n="footer_support_1">Help Center</li>
+                        <li data-i18n="footer_support_2">Contact Us</li>
+                        <li data-i18n="footer_support_3">Feedback</li>
+                        <li data-i18n="footer_support_4">Community</li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 BhoomiCare AI. Made with ❤️ for Indian Farmers by team Innovative Crew.</p>
+                <p>&copy; 2024 BhoomiCare AI. <span data-i18n="footer_copyright">Made with ❤️ for Indian Farmers by team Innovative Crew.</span></p>
             </div>
         </div>
     </footer>
@@ -294,10 +306,11 @@
     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <p>Analyzing your crop data...</p>
+            <p data-i18n="loading_overlay_text">Analyzing your crop data...</p>
         </div>
     </div>
 
+    <script src="/i18n.js"></script>
     <script src="/script.js" defer></script>
 </body>
 </html>

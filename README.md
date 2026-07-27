@@ -20,14 +20,25 @@ conditions.
   observation-based advice above
 - 🐛 **Pest Alerts** — seasonal pest/disease warnings from a seeded database,
   matched by crop and season
+- 🌐 **Multi-Language UI** — English, Hindi, Bengali, Tamil, Telugu, and
+  Marathi. Covers all static UI (labels, buttons, navigation, notifications).
+  AI-generated advice text itself stays in English for now — see note below
 - 📊 **Query Dashboard** — tracks total queries and most-asked-about crops
 - 📱 **Responsive Design** — works on phone, tablet, and desktop
+
+> **Translation scope:** the UI chrome (labels, buttons, headers, status
+> messages) is fully translated. The dynamically-generated advice text
+> (irrigation/crop-care/health/pest recommendations) intentionally stays in
+> English — accurately translating agronomic advice that's composed on the
+> fly needs native-speaker review to avoid subtly wrong translated advice,
+> which is a separate, bigger effort than static UI translation. Translations
+> were AI-assisted; a native speaker review of each language before any
+> real-world use would be worthwhile.
 
 ## 🧭 Roadmap
 
 Not built yet — listed here so it's clear what's real today vs. planned:
 
-- 🌐 Multi-language UI (Hindi, Bengali, Tamil, Telugu, Marathi)
 - 🔐 User accounts with saved query history
 
 ## 🛠️ Tech Stack
@@ -78,7 +89,9 @@ bhoomicare-ai/
 ├── public/           # Static frontend
 │   ├── index.html
 │   ├── script.js
-│   └── style.css
+│   ├── style.css
+│   ├── i18n.js       # Loads/applies language dictionaries
+│   └── i18n/         # Translation dictionaries (en, hi, bn, ta, te, mr)
 ├── data/
 │   └── pestData.json # Seed data for pest_alerts (15 crops, 35 entries)
 ├── server.js         # Express app + API routes

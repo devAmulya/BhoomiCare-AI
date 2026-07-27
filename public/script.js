@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
   loadDashboardStats();
 });
 
+// Refresh strings that mix translated + non-translated parts (crop name +
+// translated suffix) when the language switcher changes — the static
+// data-i18n attributes handle everything else automatically.
+document.addEventListener('i18nchange', updateResultsTitle);
+
 function initializeApp() {
   // Set max date for sowing date to today
   const today = new Date().toISOString().split('T')[0];
@@ -81,13 +86,13 @@ async function handleAnalyzePhoto() {
   const file = fileInput.files[0];
 
   if (!file) {
-    photoAnalyzeStatus.textContent = 'Choose a photo first.';
+    photoAnalyzeStatus.textContent = t('photo_choose_first');
     photoAnalyzeStatus.className = 'photo-analyze-status error';
     return;
   }
 
   analyzePhotoBtn.disabled = true;
-  photoAnalyzeStatus.textContent = 'Analyzing...';
+  photoAnalyzeStatus.textContent = t('photo_analyzing');
   photoAnalyzeStatus.className = 'photo-analyze-status';
   photoAnalysisResult.style.display = 'none';
 
@@ -107,7 +112,7 @@ async function handleAnalyzePhoto() {
     }
 
     // Show the result
-    photoAnalyzeStatus.textContent = 'Done';
+    photoAnalyzeStatus.textContent = t('photo_done');
     photoAnalyzeStatus.className = 'photo-analyze-status success';
     photoAnalysisResult.innerHTML = `
       <div class="pa-row"><strong>Detected crop:</strong> ${data.detectedCropType}</div>
@@ -132,7 +137,7 @@ async function handleAnalyzePhoto() {
 
   } catch (error) {
     console.error('Photo analysis error:', error);
-    photoAnalyzeStatus.textContent = error.message || 'Analysis failed. Please try again.';
+    photoAnalyzeStatus.textContent = error.message || t('photo_analysis_failed');
     photoAnalyzeStatus.className = 'photo-analyze-status error';
   } finally {
     analyzePhotoBtn.disabled = false;
@@ -175,7 +180,7 @@ async function handleFormSubmit(e) {
   
   // Validation
   if (!queryData.cropName || !queryData.location) {
-    showNotification('Please fill in all required fields', 'error');
+    showNotification(t('notif_fill_required'), 'error');
     return;
   }
   
@@ -209,24 +214,30 @@ async function handleFormSubmit(e) {
       loadWeatherForecast(queryData.location)
     ]);
     
-    showNotification('Recommendations loaded successfully!', 'success');
+    showNotification(t('notif_success'), 'success');
     
   } catch (error) {
     console.error('Error:', error);
-    showNotification('Failed to get recommendations. Please try again.', 'error');
+    showNotification(t('notif_failure'), 'error');
   } finally {
     setLoadingState(false);
     showLoadingOverlay(false);
   }
 }
 
+function updateResultsTitle() {
+  if (currentQueryData) {
+    document.getElementById('resultsTitle').textContent =
+      `${currentQueryData.cropName} ${t('results_title_suffix')}`;
+  }
+}
+
 function displayResults(data) {
   const { weather, recommendations } = data;
-  
+
   // Update results title
-  document.getElementById('resultsTitle').textContent = 
-    `${currentQueryData.cropName} Advisory Dashboard`;
-  
+  updateResultsTitle();
+
   // Display weather data
   displayWeatherData(weather);
   
@@ -272,7 +283,7 @@ async function loadPestAlerts(cropName) {
     const pestContainer = document.getElementById('pestAlerts');
     
     if (pestData.length === 0) {
-      pestContainer.innerHTML = '<p>No specific pest alerts for your crop at this time. Continue regular monitoring.</p>';
+      pestContainer.innerHTML = `<p>${t('pest_none')}</p>`;
       return;
     }
     
@@ -288,7 +299,7 @@ async function loadPestAlerts(cropName) {
   } catch (error) {
     console.error('Error loading pest alerts:', error);
     document.getElementById('pestAlerts').innerHTML = 
-      '<p>Unable to load pest alerts. Please check your internet connection.</p>';
+      `<p>${t('pest_load_error')}</p>`;
   }
 }
 
@@ -314,7 +325,7 @@ async function loadWeatherForecast(location) {
   } catch (error) {
     console.error('Error loading weather forecast:', error);
     document.getElementById('weatherForecast').innerHTML = 
-      '<p>Unable to load weather forecast. Please check your internet connection.</p>';
+      `<p>${t('forecast_load_error')}</p>`;
   }
 }
 
