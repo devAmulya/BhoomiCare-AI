@@ -203,6 +203,45 @@ function seedPestData() {
 }
 
 // Weather API integration
+// OpenWeatherMap uses a fixed, documented vocabulary of condition
+// descriptions. A static dictionary for the common ones is faster and more
+// reliable than an API call every time; translateWeatherDescription() falls
+// back to the same Gemini helper only for the rare description not covered
+// here (e.g. "volcanic ash", "tornado").
+const WEATHER_DESCRIPTIONS = {
+  'clear sky': { hi: 'साफ आसमान', bn: 'পরিষ্কার আকাশ', ta: 'தெளிவான வானம்', te: 'నిర్మలమైన ఆకాశం', mr: 'निरभ्र आकाश' },
+  'few clouds': { hi: 'कुछ बादल', bn: 'কিছু মেঘ', ta: 'சில மேகங்கள்', te: 'కొన్ని మేఘాలు', mr: 'काही ढग' },
+  'scattered clouds': { hi: 'बिखरे हुए बादल', bn: 'বিক্ষিপ্ত মেঘ', ta: 'சிதறிய மேகங்கள்', te: 'చెదురుమదురు మేఘాలు', mr: 'विखुरलेले ढग' },
+  'broken clouds': { hi: 'टूटे हुए बादल', bn: 'ভাঙা মেঘ', ta: 'உடைந்த மேகங்கள்', te: 'విరిగిన మేఘాలు', mr: 'तुटलेले ढग' },
+  'overcast clouds': { hi: 'घने बादल', bn: 'মেঘলা আকাশ', ta: 'மேகமூட்டமான வானம்', te: 'మేఘావృత ఆకాశం', mr: 'ढगाळ आकाश' },
+  'light rain': { hi: 'हल्की बारिश', bn: 'হালকা বৃষ্টি', ta: 'லேசான மழை', te: 'తేలికపాటి వర్షం', mr: 'हलका पाऊस' },
+  'moderate rain': { hi: 'मध्यम बारिश', bn: 'মাঝারি বৃষ্টি', ta: 'மிதமான மழை', te: 'మోస్తరు వర్షం', mr: 'मध्यम पाऊस' },
+  'heavy intensity rain': { hi: 'तेज़ बारिश', bn: 'ভারী বৃষ্টি', ta: 'கனமழை', te: 'భారీ వర్షం', mr: 'जोरदार पाऊस' },
+  'very heavy rain': { hi: 'बहुत तेज़ बारिश', bn: 'অতি ভারী বৃষ্টি', ta: 'மிக கனமழை', te: 'అతి భారీ వర్షం', mr: 'अतिजोरदार पाऊस' },
+  'light intensity shower rain': { hi: 'हल्की बौछार', bn: 'হালকা পশলা', ta: 'லேசான அபுஷி மழை', te: 'తేలికపాటి జల్లులు', mr: 'हलकी सर' },
+  'shower rain': { hi: 'बौछार', bn: 'পশলা বৃষ্টি', ta: 'அபுஷி மழை', te: 'జల్లులు', mr: 'सरी' },
+  'thunderstorm': { hi: 'आंधी-तूफान', bn: 'বজ্রঝড়', ta: 'இடிமின்னலுடன் புயல்', te: 'ఉరుములతో కూడిన తుఫాను', mr: 'वादळ' },
+  'light snow': { hi: 'हल्की बर्फबारी', bn: 'হালকা তুষারপাত', ta: 'லேசான பனிப்பொழிவு', te: 'తేలికపాటి మంచు', mr: 'हलकी बर्फवृष्टी' },
+  'snow': { hi: 'बर्फबारी', bn: 'তুষারপাত', ta: 'பனிப்பொழிவு', te: 'మంచు', mr: 'बर्फवृष्टी' },
+  'mist': { hi: 'धुंध', bn: 'কুয়াশা', ta: 'மூடுபனி', te: 'పొగమంచు', mr: 'धुके' },
+  'fog': { hi: 'कोहरा', bn: 'কুয়াশা', ta: 'பனிமூட்டம்', te: 'పొగమంచు', mr: 'धुके' },
+  'haze': { hi: 'धुंधलापन', bn: 'অস্পষ্টতা', ta: 'மங்கலான வானம்', te: 'పొగమంచు వాతావరణం', mr: 'धूसर वातावरण' },
+  'smoke': { hi: 'धुआं', bn: 'ধোঁয়া', ta: 'புகை', te: 'పొగ', mr: 'धूर' },
+  'drizzle': { hi: 'बूंदाबांदी', bn: 'গুঁড়ি গুঁড়ি বৃষ্টি', ta: 'தூறல்', te: 'తుంపర్లు', mr: 'रिमझिम पाऊस' }
+};
+
+async function translateWeatherDescription(description, langCode) {
+  if (!description || !TRANSLATABLE_LANGUAGES[langCode]) return description;
+  const key = description.toLowerCase();
+  if (WEATHER_DESCRIPTIONS[key] && WEATHER_DESCRIPTIONS[key][langCode]) {
+    return WEATHER_DESCRIPTIONS[key][langCode];
+  }
+  // Rare/uncommon description not in the static list — fall back to Gemini
+  // for just this one short phrase rather than leaving it in English.
+  const result = await translateFields({ description }, langCode);
+  return result.description;
+}
+
 async function getWeatherData(location) {
   try {
     const API_KEY = process.env.OPENWEATHER_API_KEY || 'demo_key';
@@ -465,11 +504,15 @@ app.post('/api/crop-query', async (req, res) => {
     // Translate a copy for the response only — falls back to English
     // automatically if translation fails for any reason (see translateFields)
     const localizedRecommendations = await translateFields(recommendations, language);
+    const localizedWeather = {
+      ...weatherData,
+      description: await translateWeatherDescription(weatherData.description, language)
+    };
 
     res.json({
       success: true,
       queryId: queryResult,
-      weather: weatherData,
+      weather: localizedWeather,
       recommendations: localizedRecommendations
     });
 
@@ -669,6 +712,7 @@ app.get('/api/pest-alerts/:crop', async (req, res) => {
 // Get weather forecast (real 5-day forecast from OpenWeatherMap's free forecast API)
 app.get('/api/weather-forecast/:location', async (req, res) => {
   const location = req.params.location;
+  const language = req.query.lang;
 
   try {
     const API_KEY = process.env.OPENWEATHER_API_KEY;
@@ -691,7 +735,7 @@ app.get('/api/weather-forecast/:location', async (req, res) => {
       byDay[day].push(entry);
     });
 
-    const forecast = Object.keys(byDay).slice(0, 5).map(day => {
+    const forecastDays = Object.keys(byDay).slice(0, 5).map(day => {
       const entries = byDay[day];
       // Prefer the reading closest to midday for a representative daily snapshot
       const midday = entries.reduce((best, e) => {
@@ -701,7 +745,7 @@ app.get('/api/weather-forecast/:location', async (req, res) => {
       });
 
       return {
-        date: new Date(day).toLocaleDateString('en-IN'),
+        date: day, // raw ISO "YYYY-MM-DD" — frontend formats this per locale
         temperature: midday.main.temp,
         humidity: midday.main.humidity,
         rainfall: midday.rain ? (midday.rain['3h'] || 0) : 0,
@@ -709,29 +753,48 @@ app.get('/api/weather-forecast/:location', async (req, res) => {
       };
     });
 
+    // Translate current + each forecast day's description. Each uses the
+    // static dictionary when possible (no extra API call), only falling
+    // back to Gemini for uncommon phrases not in that list.
+    const localizedCurrent = {
+      ...currentWeather,
+      description: await translateWeatherDescription(currentWeather.description, language)
+    };
+    const localizedForecast = await Promise.all(
+      forecastDays.map(async (day) => ({
+        ...day,
+        description: await translateWeatherDescription(day.description, language)
+      }))
+    );
+
     res.json({
-      current: currentWeather,
-      forecast
+      current: localizedCurrent,
+      forecast: localizedForecast
     });
 
   } catch (error) {
     console.error('Forecast API error:', error.message);
     // Fall back to a clearly-flagged estimate so the UI doesn't break without an API key
     const currentWeather = await getWeatherData(location);
+    const translatedDescription = await translateWeatherDescription(currentWeather.description, language);
     const forecast = [];
     for (let i = 0; i < 5; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
       forecast.push({
-        date: date.toLocaleDateString('en-IN'),
+        date: date.toISOString().split('T')[0], // raw ISO, same as above
         temperature: currentWeather.temperature,
         humidity: currentWeather.humidity,
         rainfall: 0,
-        description: currentWeather.description,
+        description: translatedDescription,
         estimated: true
       });
     }
-    res.json({ current: currentWeather, forecast, note: 'Live forecast unavailable — showing current conditions as an estimate.' });
+    res.json({
+      current: { ...currentWeather, description: translatedDescription },
+      forecast,
+      note: 'Live forecast unavailable — showing current conditions as an estimate.'
+    });
   }
 });
 

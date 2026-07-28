@@ -28,7 +28,12 @@
     severity_high: 'High Risk',
     severity_medium: 'Medium Risk',
     severity_low: 'Low Risk',
-    pest_prevention_label: 'Prevention:'
+    pest_prevention_label: 'Prevention:',
+    photo_result_crop: 'Detected crop:',
+    photo_result_health: 'Health status:',
+    photo_result_issues: 'Possible issues:',
+    date_today: 'Today',
+    date_tomorrow: 'Tomorrow'
   };
 
   let translations = {};

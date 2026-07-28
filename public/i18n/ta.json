@@ -17,6 +17,15 @@
   "crop_sugarcane": "கரும்பு",
   "crop_maize": "சோளம்",
   "crop_bajra": "கம்பு",
+  "crop_jowar": "சோளக்கம்பு",
+  "crop_groundnut": "நிலக்கடலை",
+  "crop_soybean": "சோயாபீன்",
+  "crop_mustard": "கடுகு",
+  "crop_potato": "உருளைக்கிழங்கு",
+  "crop_tomato": "தக்காளி",
+  "crop_onion": "வெங்காயம்",
+  "crop_chickpea": "கொண்டைக்கடலை",
+  "crop_barley": "பார்லி",
   "label_location": "இடம் *",
   "placeholder_location": "எ.கா., மும்பை, மகாராஷ்டிரா",
   "label_sowing_date": "விதைப்பு தேதி (விருப்பமானது)",
@@ -80,5 +89,10 @@
   "severity_high": "அதிக ஆபத்து",
   "severity_medium": "நடுத்தர ஆபத்து",
   "severity_low": "குறைந்த ஆபத்து",
-  "pest_prevention_label": "தடுப்பு:"
+  "pest_prevention_label": "தடுப்பு:",
+  "photo_result_crop": "கண்டறியப்பட்ட பயிர்:",
+  "photo_result_health": "ஆரோக்கிய நிலை:",
+  "photo_result_issues": "சாத்தியமான பிரச்சினைகள்:",
+  "date_today": "இன்று",
+  "date_tomorrow": "நாளை"
 }

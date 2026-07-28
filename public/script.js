@@ -116,10 +116,10 @@ async function handleAnalyzePhoto() {
     photoAnalyzeStatus.textContent = t('photo_done');
     photoAnalyzeStatus.className = 'photo-analyze-status success';
     photoAnalysisResult.innerHTML = `
-      <div class="pa-row"><strong>Detected crop:</strong> ${data.detectedCropType}</div>
-      <div class="pa-row"><strong>Health status:</strong> ${data.healthStatus}</div>
+      <div class="pa-row"><strong>${t('photo_result_crop')}</strong> ${data.detectedCropType}</div>
+      <div class="pa-row"><strong>${t('photo_result_health')}</strong> ${data.healthStatus}</div>
       ${data.potentialIssues.length > 0
-        ? `<div class="pa-row"><strong>Possible issues:</strong> ${data.potentialIssues.join(', ')}</div>`
+        ? `<div class="pa-row"><strong>${t('photo_result_issues')}</strong> ${data.potentialIssues.join(', ')}</div>`
         : ''}
       ${data.notes ? `<div class="pa-row">${data.notes}</div>` : ''}
     `;
@@ -233,10 +233,28 @@ async function handleFormSubmit(e) {
   }
 }
 
+// Maps the English crop name (kept in inputs/backend for keyword matching)
+// to its i18n key, purely for display purposes — e.g. so the results title
+// doesn't read "Rice सलाहकार डैशबोर्ड" (crop name in English, everything
+// else translated). Falls back to the original text for any crop not in
+// this list (free-text input isn't limited to these 15).
+const CROP_NAME_KEYS = {
+  rice: 'crop_rice', wheat: 'crop_wheat', cotton: 'crop_cotton',
+  sugarcane: 'crop_sugarcane', maize: 'crop_maize', bajra: 'crop_bajra',
+  jowar: 'crop_jowar', groundnut: 'crop_groundnut', soybean: 'crop_soybean',
+  mustard: 'crop_mustard', potato: 'crop_potato', tomato: 'crop_tomato',
+  onion: 'crop_onion', chickpea: 'crop_chickpea', barley: 'crop_barley'
+};
+
+function translateCropNameForDisplay(cropName) {
+  const key = CROP_NAME_KEYS[(cropName || '').trim().toLowerCase()];
+  return key ? t(key) : cropName;
+}
+
 function updateResultsTitle() {
   if (currentQueryData) {
     document.getElementById('resultsTitle').textContent =
-      `${currentQueryData.cropName} ${t('results_title_suffix')}`;
+      `${translateCropNameForDisplay(currentQueryData.cropName)} ${t('results_title_suffix')}`;
   }
 }
 
@@ -313,7 +331,7 @@ async function loadPestAlerts(cropName) {
 
 async function loadWeatherForecast(location) {
   try {
-    const response = await fetch(`/api/weather-forecast/${encodeURIComponent(location)}`);
+    const response = await fetch(`/api/weather-forecast/${encodeURIComponent(location)}?lang=${encodeURIComponent(getCurrentLang())}`);
     const forecastData = await response.json();
     
     const forecastContainer = document.getElementById('weatherForecast');
@@ -363,6 +381,8 @@ function animateCounter(element, target) {
   }, 30);
 }
 
+const LOCALE_MAP = { en: 'en-IN', hi: 'hi-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN' };
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   const today = new Date();
@@ -370,11 +390,12 @@ function formatDate(dateString) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   
   if (date.toDateString() === today.toDateString()) {
-    return 'Today';
+    return t('date_today');
   } else if (date.toDateString() === tomorrow.toDateString()) {
-    return 'Tomorrow';
+    return t('date_tomorrow');
   } else {
-    return date.toLocaleDateString('en-IN', { 
+    const locale = LOCALE_MAP[getCurrentLang()] || 'en-IN';
+    return date.toLocaleDateString(locale, {
       weekday: 'short',
       day: 'numeric'
     });

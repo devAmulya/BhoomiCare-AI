@@ -17,6 +17,15 @@
   "crop_sugarcane": "చెరకు",
   "crop_maize": "మొక్కజొన్న",
   "crop_bajra": "సజ్జలు",
+  "crop_jowar": "జొన్న",
+  "crop_groundnut": "వేరుశనగ",
+  "crop_soybean": "సోయాబీన్",
+  "crop_mustard": "ఆవాలు",
+  "crop_potato": "బంగాళదుంప",
+  "crop_tomato": "టమాటా",
+  "crop_onion": "ఉల్లిపాయ",
+  "crop_chickpea": "శనగలు",
+  "crop_barley": "బార్లీ",
   "label_location": "ప్రదేశం *",
   "placeholder_location": "ఉదా., ముంబై, మహారాష్ట్ర",
   "label_sowing_date": "విత్తే తేదీ (ఐచ్ఛికం)",
@@ -80,5 +89,10 @@
   "severity_high": "అధిక ప్రమాదం",
   "severity_medium": "మధ్యస్థ ప్రమాదం",
   "severity_low": "తక్కువ ప్రమాదం",
-  "pest_prevention_label": "నివారణ:"
+  "pest_prevention_label": "నివారణ:",
+  "photo_result_crop": "గుర్తించిన పంట:",
+  "photo_result_health": "ఆరోగ్య స్థితి:",
+  "photo_result_issues": "సాధ్యమైన సమస్యలు:",
+  "date_today": "ఈరోజు",
+  "date_tomorrow": "రేపు"
 }

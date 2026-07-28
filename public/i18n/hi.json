@@ -17,6 +17,15 @@
   "crop_sugarcane": "गन्ना",
   "crop_maize": "मक्का",
   "crop_bajra": "बाजरा",
+  "crop_jowar": "ज्वार",
+  "crop_groundnut": "मूंगफली",
+  "crop_soybean": "सोयाबीन",
+  "crop_mustard": "सरसों",
+  "crop_potato": "आलू",
+  "crop_tomato": "टमाटर",
+  "crop_onion": "प्याज",
+  "crop_chickpea": "चना",
+  "crop_barley": "जौ",
   "label_location": "स्थान *",
   "placeholder_location": "जैसे, मुंबई, महाराष्ट्र",
   "label_sowing_date": "बुवाई की तारीख (वैकल्पिक)",
@@ -80,5 +89,10 @@
   "severity_high": "उच्च जोखिम",
   "severity_medium": "मध्यम जोखिम",
   "severity_low": "कम जोखिम",
-  "pest_prevention_label": "रोकथाम:"
+  "pest_prevention_label": "रोकथाम:",
+  "photo_result_crop": "पहचानी गई फसल:",
+  "photo_result_health": "स्वास्थ्य स्थिति:",
+  "photo_result_issues": "संभावित समस्याएं:",
+  "date_today": "आज",
+  "date_tomorrow": "कल"
 }

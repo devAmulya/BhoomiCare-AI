@@ -17,6 +17,15 @@
   "crop_sugarcane": "ऊस",
   "crop_maize": "मका",
   "crop_bajra": "बाजरी",
+  "crop_jowar": "ज्वारी",
+  "crop_groundnut": "भुईमूग",
+  "crop_soybean": "सोयाबीन",
+  "crop_mustard": "मोहरी",
+  "crop_potato": "बटाटा",
+  "crop_tomato": "टोमॅटो",
+  "crop_onion": "कांदा",
+  "crop_chickpea": "हरभरा",
+  "crop_barley": "जव",
   "label_location": "स्थान *",
   "placeholder_location": "उदा., मुंबई, महाराष्ट्र",
   "label_sowing_date": "पेरणीची तारीख (ऐच्छिक)",
@@ -80,5 +89,10 @@
   "severity_high": "उच्च धोका",
   "severity_medium": "मध्यम धोका",
   "severity_low": "कमी धोका",
-  "pest_prevention_label": "प्रतिबंध:"
+  "pest_prevention_label": "प्रतिबंध:",
+  "photo_result_crop": "ओळखलेले पीक:",
+  "photo_result_health": "आरोग्य स्थिती:",
+  "photo_result_issues": "संभाव्य समस्या:",
+  "date_today": "आज",
+  "date_tomorrow": "उद्या"
 }

@@ -17,6 +17,15 @@
   "crop_sugarcane": "Sugarcane",
   "crop_maize": "Maize",
   "crop_bajra": "Bajra",
+  "crop_jowar": "Jowar",
+  "crop_groundnut": "Groundnut",
+  "crop_soybean": "Soybean",
+  "crop_mustard": "Mustard",
+  "crop_potato": "Potato",
+  "crop_tomato": "Tomato",
+  "crop_onion": "Onion",
+  "crop_chickpea": "Chickpea",
+  "crop_barley": "Barley",
   "label_location": "Location *",
   "placeholder_location": "e.g., Mumbai, Maharashtra",
   "label_sowing_date": "Sowing Date (Optional)",
@@ -80,5 +89,10 @@
   "severity_high": "High Risk",
   "severity_medium": "Medium Risk",
   "severity_low": "Low Risk",
-  "pest_prevention_label": "Prevention:"
+  "pest_prevention_label": "Prevention:",
+  "photo_result_crop": "Detected crop:",
+  "photo_result_health": "Health status:",
+  "photo_result_issues": "Possible issues:",
+  "date_today": "Today",
+  "date_tomorrow": "Tomorrow"
 }
