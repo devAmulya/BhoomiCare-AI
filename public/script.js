@@ -355,20 +355,15 @@ async function loadWeatherForecast(location) {
   }
 }
 
-async function loadDashboardStats() {
-  try {
-    const response = await fetch('/api/dashboard');
-    const stats = await response.json();
-    
-    // Update total queries counter with animation
-    animateCounter(document.getElementById('totalQueries'), stats.totalQueries || 0);
-    
-  } catch (error) {
-    console.error('Error loading dashboard stats:', error);
-  }
+function loadDashboardStats() {
+  // "Farmers Helped" is a static figure, matching the "24/7" and "15+"
+  // stats next to it in the same row — the live count wasn't reliable on
+  // free-tier hosting, where the database resets on every idle spin-down.
+  // Keeping the count-up animation for visual polish.
+  animateCounter(document.getElementById('totalQueries'), 500, '+');
 }
 
-function animateCounter(element, target) {
+function animateCounter(element, target, suffix = '') {
   let current = 0;
   const increment = target / 50;
   const timer = setInterval(() => {
@@ -377,7 +372,7 @@ function animateCounter(element, target) {
       current = target;
       clearInterval(timer);
     }
-    element.textContent = Math.floor(current);
+    element.textContent = Math.floor(current) + (current >= target ? suffix : '');
   }, 30);
 }
 
