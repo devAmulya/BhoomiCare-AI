@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
   loadDashboardStats();
 });
 
+// Refresh strings that mix translated + non-translated parts (crop name +
+// translated suffix) when the language switcher changes — the static
+// data-i18n attributes handle everything else automatically.
+document.addEventListener('i18nchange', updateResultsTitle);
+
 function initializeApp() {
   // Set max date for sowing date to today
   const today = new Date().toISOString().split('T')[0];
@@ -81,19 +86,20 @@ async function handleAnalyzePhoto() {
   const file = fileInput.files[0];
 
   if (!file) {
-    photoAnalyzeStatus.textContent = 'Choose a photo first.';
+    photoAnalyzeStatus.textContent = t('photo_choose_first');
     photoAnalyzeStatus.className = 'photo-analyze-status error';
     return;
   }
 
   analyzePhotoBtn.disabled = true;
-  photoAnalyzeStatus.textContent = 'Analyzing...';
+  photoAnalyzeStatus.textContent = t('photo_analyzing');
   photoAnalyzeStatus.className = 'photo-analyze-status';
   photoAnalysisResult.style.display = 'none';
 
   try {
     const formData = new FormData();
     formData.append('crop_image', file);
+    formData.append('language', getCurrentLang());
 
     const response = await fetch('/api/analyze-crop-image', {
       method: 'POST',
@@ -107,13 +113,13 @@ async function handleAnalyzePhoto() {
     }
 
     // Show the result
-    photoAnalyzeStatus.textContent = 'Done';
+    photoAnalyzeStatus.textContent = t('photo_done');
     photoAnalyzeStatus.className = 'photo-analyze-status success';
     photoAnalysisResult.innerHTML = `
-      <div class="pa-row"><strong>Detected crop:</strong> ${data.detectedCropType}</div>
-      <div class="pa-row"><strong>Health status:</strong> ${data.healthStatus}</div>
+      <div class="pa-row"><strong>${t('photo_result_crop')}</strong> ${data.detectedCropType}</div>
+      <div class="pa-row"><strong>${t('photo_result_health')}</strong> ${data.healthStatus}</div>
       ${data.potentialIssues.length > 0
-        ? `<div class="pa-row"><strong>Possible issues:</strong> ${data.potentialIssues.join(', ')}</div>`
+        ? `<div class="pa-row"><strong>${t('photo_result_issues')}</strong> ${data.potentialIssues.join(', ')}</div>`
         : ''}
       ${data.notes ? `<div class="pa-row">${data.notes}</div>` : ''}
     `;
@@ -122,8 +128,14 @@ async function handleAnalyzePhoto() {
     // Feed the result into the observations field so the advice engine
     // (which matches on keywords like "pest signs" / "yellowing leaves")
     // picks it up too, without overwriting anything the user already typed.
+    // Uses the English fields specifically — healthStatus/potentialIssues
+    // above may be translated for display, but the keyword matching below
+    // and the advice engine on the backend both expect English.
     const observationsField = document.getElementById('observations');
-    const mappedText = mapAnalysisToObservationText(data);
+    const mappedText = mapAnalysisToObservationText({
+      healthStatus: data.healthStatusEn,
+      potentialIssues: data.potentialIssuesEn
+    });
     if (mappedText) {
       observationsField.value = observationsField.value
         ? `${observationsField.value}; ${mappedText}`
@@ -132,7 +144,7 @@ async function handleAnalyzePhoto() {
 
   } catch (error) {
     console.error('Photo analysis error:', error);
-    photoAnalyzeStatus.textContent = error.message || 'Analysis failed. Please try again.';
+    photoAnalyzeStatus.textContent = error.message || t('photo_analysis_failed');
     photoAnalyzeStatus.className = 'photo-analyze-status error';
   } finally {
     analyzePhotoBtn.disabled = false;
@@ -170,12 +182,13 @@ async function handleFormSubmit(e) {
     location: formData.get('location').trim(),
     sowingDate: formData.get('sowingDate') || null,
     cropStage: formData.get('cropStage') || null,
-    observations: formData.get('observations') ? formData.get('observations').trim() : null
+    observations: formData.get('observations') ? formData.get('observations').trim() : null,
+    language: getCurrentLang()
   };
   
   // Validation
   if (!queryData.cropName || !queryData.location) {
-    showNotification('Please fill in all required fields', 'error');
+    showNotification(t('notif_fill_required'), 'error');
     return;
   }
   
@@ -209,24 +222,48 @@ async function handleFormSubmit(e) {
       loadWeatherForecast(queryData.location)
     ]);
     
-    showNotification('Recommendations loaded successfully!', 'success');
+    showNotification(t('notif_success'), 'success');
     
   } catch (error) {
     console.error('Error:', error);
-    showNotification('Failed to get recommendations. Please try again.', 'error');
+    showNotification(t('notif_failure'), 'error');
   } finally {
     setLoadingState(false);
     showLoadingOverlay(false);
   }
 }
 
+// Maps the English crop name (kept in inputs/backend for keyword matching)
+// to its i18n key, purely for display purposes — e.g. so the results title
+// doesn't read "Rice सलाहकार डैशबोर्ड" (crop name in English, everything
+// else translated). Falls back to the original text for any crop not in
+// this list (free-text input isn't limited to these 15).
+const CROP_NAME_KEYS = {
+  rice: 'crop_rice', wheat: 'crop_wheat', cotton: 'crop_cotton',
+  sugarcane: 'crop_sugarcane', maize: 'crop_maize', bajra: 'crop_bajra',
+  jowar: 'crop_jowar', groundnut: 'crop_groundnut', soybean: 'crop_soybean',
+  mustard: 'crop_mustard', potato: 'crop_potato', tomato: 'crop_tomato',
+  onion: 'crop_onion', chickpea: 'crop_chickpea', barley: 'crop_barley'
+};
+
+function translateCropNameForDisplay(cropName) {
+  const key = CROP_NAME_KEYS[(cropName || '').trim().toLowerCase()];
+  return key ? t(key) : cropName;
+}
+
+function updateResultsTitle() {
+  if (currentQueryData) {
+    document.getElementById('resultsTitle').textContent =
+      `${translateCropNameForDisplay(currentQueryData.cropName)} ${t('results_title_suffix')}`;
+  }
+}
+
 function displayResults(data) {
   const { weather, recommendations } = data;
-  
+
   // Update results title
-  document.getElementById('resultsTitle').textContent = 
-    `${currentQueryData.cropName} Advisory Dashboard`;
-  
+  updateResultsTitle();
+
   // Display weather data
   displayWeatherData(weather);
   
@@ -266,35 +303,35 @@ function displayRecommendations(recommendations) {
 
 async function loadPestAlerts(cropName) {
   try {
-    const response = await fetch(`/api/pest-alerts/${encodeURIComponent(cropName)}`);
+    const response = await fetch(`/api/pest-alerts/${encodeURIComponent(cropName)}?lang=${encodeURIComponent(getCurrentLang())}`);
     const pestData = await response.json();
     
     const pestContainer = document.getElementById('pestAlerts');
     
     if (pestData.length === 0) {
-      pestContainer.innerHTML = '<p>No specific pest alerts for your crop at this time. Continue regular monitoring.</p>';
+      pestContainer.innerHTML = `<p>${t('pest_none')}</p>`;
       return;
     }
     
     pestContainer.innerHTML = pestData.map(pest => `
       <div class="pest-alert">
         <div class="pest-name">${pest.pest_name}</div>
-        <span class="pest-severity ${pest.severity.toLowerCase()}">${pest.severity} Risk</span>
+        <span class="pest-severity ${pest.severity.toLowerCase()}">${t('severity_' + pest.severity.toLowerCase()) || pest.severity + ' Risk'}</span>
         <div class="pest-description">${pest.description}</div>
-        <div class="pest-prevention"><strong>Prevention:</strong> ${pest.prevention}</div>
+        <div class="pest-prevention"><strong>${t('pest_prevention_label')}</strong> ${pest.prevention}</div>
       </div>
     `).join('');
     
   } catch (error) {
     console.error('Error loading pest alerts:', error);
     document.getElementById('pestAlerts').innerHTML = 
-      '<p>Unable to load pest alerts. Please check your internet connection.</p>';
+      `<p>${t('pest_load_error')}</p>`;
   }
 }
 
 async function loadWeatherForecast(location) {
   try {
-    const response = await fetch(`/api/weather-forecast/${encodeURIComponent(location)}`);
+    const response = await fetch(`/api/weather-forecast/${encodeURIComponent(location)}?lang=${encodeURIComponent(getCurrentLang())}`);
     const forecastData = await response.json();
     
     const forecastContainer = document.getElementById('weatherForecast');
@@ -314,7 +351,7 @@ async function loadWeatherForecast(location) {
   } catch (error) {
     console.error('Error loading weather forecast:', error);
     document.getElementById('weatherForecast').innerHTML = 
-      '<p>Unable to load weather forecast. Please check your internet connection.</p>';
+      `<p>${t('forecast_load_error')}</p>`;
   }
 }
 
@@ -344,6 +381,8 @@ function animateCounter(element, target) {
   }, 30);
 }
 
+const LOCALE_MAP = { en: 'en-IN', hi: 'hi-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN', mr: 'mr-IN' };
+
 function formatDate(dateString) {
   const date = new Date(dateString);
   const today = new Date();
@@ -351,11 +390,12 @@ function formatDate(dateString) {
   tomorrow.setDate(tomorrow.getDate() + 1);
   
   if (date.toDateString() === today.toDateString()) {
-    return 'Today';
+    return t('date_today');
   } else if (date.toDateString() === tomorrow.toDateString()) {
-    return 'Tomorrow';
+    return t('date_tomorrow');
   } else {
-    return date.toLocaleDateString('en-IN', { 
+    const locale = LOCALE_MAP[getCurrentLang()] || 'en-IN';
+    return date.toLocaleDateString(locale, {
       weekday: 'short',
       day: 'numeric'
     });

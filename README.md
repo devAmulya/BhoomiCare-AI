@@ -20,6 +20,23 @@ conditions.
   observation-based advice above
 - 🐛 **Pest Alerts** — seasonal pest/disease warnings from a seeded database,
   matched by crop and season
+- 🌐 **Multi-Language UI** — English, Hindi, Bengali, Tamil, Telugu, and
+  Marathi. Static UI translated via local dictionaries; AI-generated advice
+  and pest alert text translated on-demand via Gemini (see note below)
+
+> **Translation approach:** static UI text (labels, buttons, headers) uses
+> local dictionaries in `public/i18n/`. Advice text and pest alerts are
+> generated dynamically (crop × weather × observations is combinatorial),
+> so instead of pre-writing translations for every possible combination,
+> the already-generated English text is translated on-demand via Gemini
+> (same free-tier key used for photo analysis) when a non-English language
+> is selected. If translation fails for any reason (no key, rate limit),
+> it falls back to English rather than breaking the page. Pest severity
+> labels (High/Medium/Low) are translated via the static dictionary instead,
+> since the raw English value doubles as a CSS class name in the frontend.
+> As with any machine translation, a native-speaker review before real-world
+> use would be worthwhile, especially for agricultural advice.
+
 - 📊 **Query Dashboard** — tracks total queries and most-asked-about crops
 - 📱 **Responsive Design** — works on phone, tablet, and desktop
 
@@ -27,7 +44,6 @@ conditions.
 
 Not built yet — listed here so it's clear what's real today vs. planned:
 
-- 🌐 Multi-language UI (Hindi, Bengali, Tamil, Telugu, Marathi)
 - 🔐 User accounts with saved query history
 
 ## 🛠️ Tech Stack
@@ -78,7 +94,9 @@ bhoomicare-ai/
 ├── public/           # Static frontend
 │   ├── index.html
 │   ├── script.js
-│   └── style.css
+│   ├── style.css
+│   ├── i18n.js       # Loads/applies language dictionaries
+│   └── i18n/         # Translation dictionaries (en, hi, bn, ta, te, mr)
 ├── data/
 │   └── pestData.json # Seed data for pest_alerts (15 crops, 35 entries)
 ├── server.js         # Express app + API routes

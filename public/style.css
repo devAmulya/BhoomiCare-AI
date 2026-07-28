@@ -95,6 +95,8 @@ body {
 .header-features {
   display: flex;
   gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .feature-item {
@@ -113,6 +115,26 @@ body {
 
 .feature-icon {
   font-size: 1.2rem;
+}
+
+.language-switcher-wrap {
+  opacity: 1;
+}
+
+.language-switcher {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.language-switcher option {
+  color: var(--text-dark);
+  background: var(--white);
 }
 
 /* Main Content */
