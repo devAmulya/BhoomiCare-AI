@@ -105,7 +105,8 @@ function initializeDatabase() {
       description TEXT,
       prevention TEXT,
       season TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(crop_name, pest_name)
     );
 
     CREATE TABLE IF NOT EXISTS image_analyses (
@@ -124,9 +125,42 @@ function initializeDatabase() {
     } else {
       console.log('Database tables initialized');
       migrateSchema();
-      seedPestData();
+      deduplicatePestAlerts();
     }
   });
+}
+
+// Fixes a real bug: INSERT OR IGNORE in seedPestData() had no UNIQUE
+// constraint to check against, so every server restart (nodemon restarts
+// constantly during development) re-inserted all pest_alerts rows on top
+// of the existing ones. This removes any duplicates that already
+// accumulated, then adds the unique index so it can't happen again before
+// re-seeding (seeding now runs after this, so freshly-deduplicated data
+// won't get re-duplicated by the seed step itself).
+function deduplicatePestAlerts() {
+  db.run(
+    `DELETE FROM pest_alerts
+     WHERE id NOT IN (
+       SELECT MIN(id) FROM pest_alerts GROUP BY crop_name, pest_name
+     )`,
+    function (err) {
+      if (err) {
+        console.error('Failed to deduplicate pest_alerts:', err.message);
+        seedPestData();
+        return;
+      }
+      if (this.changes > 0) {
+        console.log(`Removed ${this.changes} duplicate pest_alerts row(s)`);
+      }
+      db.run(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_pest_alerts_unique ON pest_alerts(crop_name, pest_name)',
+        (idxErr) => {
+          if (idxErr) console.error('Failed to create unique index on pest_alerts:', idxErr.message);
+          seedPestData();
+        }
+      );
+    }
+  );
 }
 
 // Migrate existing databases created before the `observations` column existed.
@@ -285,6 +319,102 @@ function generateAIRecommendations(cropData, weatherData, observations) {
   };
 }
 
+// Extracts the first complete, balanced top-level JSON object from a string,
+// tolerating any trailing content after it. Needed because Gemini 3.x models
+// have "thinking" on by default, and reasoning text can end up appended
+// after the actual JSON answer even with responseMimeType: 'application/json'.
+// A plain JSON.parse() would fail on that trailing content with "Unexpected
+// non-whitespace character after JSON".
+function extractFirstJsonObject(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escapeNext = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escapeNext) { escapeNext = false; continue; }
+    if (ch === '\\') { escapeNext = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null; // unbalanced/truncated — caller should fall back
+}
+
+// Language codes supported by the UI that also need advice-text translation.
+// 'en' is intentionally excluded — no translation call needed for English.
+const TRANSLATABLE_LANGUAGES = {
+  hi: 'Hindi',
+  bn: 'Bengali',
+  ta: 'Tamil',
+  te: 'Telugu',
+  mr: 'Marathi'
+};
+
+// Translates an object of English text fields into the target language using
+// the same free-tier Gemini setup as the crop photo analysis (MR4). Used for
+// advice text and pest alert text, since that content is generated/stored in
+// English and combinatorial (crop x weather x observations), making static
+// dictionaries impractical the way they work for fixed UI labels.
+//
+// On any failure (no API key, rate limit, parse error) this falls back to
+// returning the original English fields unchanged rather than breaking the
+// request — a farmer seeing English advice is a much better failure mode
+// than a broken page.
+async function translateFields(fields, langCode) {
+  const languageName = TRANSLATABLE_LANGUAGES[langCode];
+  if (!languageName) return fields; // 'en' or unrecognized — no-op
+
+  const API_KEY = process.env.GEMINI_API_KEY;
+  if (!API_KEY) {
+    console.warn('Skipping advice translation: GEMINI_API_KEY not configured.');
+    return fields;
+  }
+
+  try {
+    const prompt = `Translate the values in this JSON object into ${languageName}. Keep the exact same JSON keys. Preserve all emojis, numbers, percentages, and units (like °C, km/h, mm) exactly as they appear. Return ONLY the translated JSON object, no other text.
+
+${JSON.stringify(fields)}`;
+
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${API_KEY}`,
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          // This is a simple translation task with no reasoning needed —
+          // keep thinking minimal to reduce latency/quota use and avoid
+          // reasoning text leaking into the response (see extractFirstJsonObject).
+          thinkingConfig: { thinkingLevel: 'low', includeThoughts: false }
+        }
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    const rawText = response.data.candidates[0].content.parts[0].text.trim();
+    const jsonSlice = extractFirstJsonObject(rawText);
+    if (!jsonSlice) throw new Error('No JSON object found in translation response');
+    const translated = JSON.parse(jsonSlice);
+
+    // Only accept keys we actually asked for, and fall back per-field if
+    // the model dropped one, rather than discarding the whole translation.
+    const result = {};
+    Object.keys(fields).forEach(key => {
+      result[key] = (translated[key] && typeof translated[key] === 'string') ? translated[key] : fields[key];
+    });
+    return result;
+
+  } catch (error) {
+    console.error('Advice translation failed, falling back to English:', error.message);
+    return fields;
+  }
+}
+
 // Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -293,7 +423,7 @@ app.get('/', (req, res) => {
 // Submit crop query
 app.post('/api/crop-query', async (req, res) => {
   try {
-    const { cropName, location, sowingDate, cropStage, observations } = req.body;
+    const { cropName, location, sowingDate, cropStage, observations, language } = req.body;
 
     // Insert user query
     const queryResult = await new Promise((resolve, reject) => {
@@ -323,7 +453,8 @@ app.post('/api/crop-query', async (req, res) => {
       observations
     );
 
-    // Store AI responses
+    // Store AI responses (always in English, so the DB/dashboard stays
+    // consistent regardless of what language any given user picked)
     Object.entries(recommendations).forEach(([type, text]) => {
       db.run(
         'INSERT INTO ai_responses (query_id, response_type, response_text) VALUES (?, ?, ?)',
@@ -331,11 +462,15 @@ app.post('/api/crop-query', async (req, res) => {
       );
     });
 
+    // Translate a copy for the response only — falls back to English
+    // automatically if translation fails for any reason (see translateFields)
+    const localizedRecommendations = await translateFields(recommendations, language);
+
     res.json({
       success: true,
       queryId: queryResult,
       weather: weatherData,
-      recommendations
+      recommendations: localizedRecommendations
     });
 
   } catch (error) {
@@ -367,8 +502,21 @@ app.post('/api/analyze-crop-image', upload.single('crop_image'), async (req, res
 
   try {
     const base64Image = req.file.buffer.toString('base64');
-    const prompt = `You are an agricultural crop health analyst. You will be shown a photo of a crop or plant. Respond with ONLY a JSON object in exactly this shape:
-{"detectedCropType": string, "healthStatus": "Healthy" | "Unhealthy" | "Affected" | "Uncertain", "potentialIssues": string[], "notes": string}
+    const language = req.body.language;
+    const languageName = TRANSLATABLE_LANGUAGES[language];
+
+    // One call, two outputs: ask for English (needed internally — the
+    // frontend keyword-matches on English words like "healthy"/"pest" to
+    // feed the observations field, and English is what we store in the DB)
+    // AND the translated version for display, instead of doing a separate
+    // translation call after the fact.
+    const shape = '{"detectedCropType": string, "healthStatus": "Healthy" | "Unhealthy" | "Affected" | "Uncertain", "potentialIssues": string[], "notes": string}';
+    const prompt = languageName
+      ? `You are an agricultural crop health analyst. You will be shown a photo of a crop or plant. Respond with ONLY a JSON object in exactly this shape:
+{"en": ${shape}, "translated": ${shape}}
+"en" must be in English. "translated" must be the same analysis translated into ${languageName}, with "healthStatus" translated too (still one of the four categories, just in ${languageName}). Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation" / its ${languageName} translation). Use an empty array if you see no issues. If the image doesn't clearly show a crop/plant, or you can't confidently identify it, set detectedCropType to "Unknown" (and its translation) and explain briefly in notes.`
+      : `You are an agricultural crop health analyst. You will be shown a photo of a crop or plant. Respond with ONLY a JSON object in exactly this shape:
+${shape}
 Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation", "Nutrient Deficiency"). Use an empty array if you see no issues. If the image doesn't clearly show a crop/plant, or you can't confidently identify it, set detectedCropType to "Unknown" and explain briefly in notes.`;
 
     const response = await axios.post(
@@ -381,46 +529,70 @@ Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation", "
           ]
         }],
         generationConfig: {
-          responseMimeType: 'application/json'
+          responseMimeType: 'application/json',
+          // Keep some thinking for actual image analysis (unlike the pure
+          // translation call above) but cap it low — this is a simple
+          // classification task, not deep reasoning — and hide thought
+          // content from the response so it can't leak into the JSON parse.
+          thinkingConfig: { thinkingLevel: 'low', includeThoughts: false }
         }
       },
       { headers: { 'Content-Type': 'application/json' } }
     );
 
     const rawText = response.data.candidates[0].content.parts[0].text.trim();
-    // responseMimeType: 'application/json' should already give clean JSON,
-    // but strip markdown fences defensively in case the model wraps it anyway.
-    const cleaned = rawText.replace(/^```json\s*|^```\s*|```$/g, '').trim();
+    // Prefer extracting a balanced JSON object over a naive fence-strip —
+    // tolerates any stray text (e.g. leftover reasoning) around the JSON.
+    const jsonSlice = extractFirstJsonObject(rawText);
 
-    let analysis;
+    const fallback = {
+      detectedCropType: 'Unknown',
+      healthStatus: 'Uncertain',
+      potentialIssues: [],
+      notes: 'Could not parse a structured result from the analysis. Raw response: ' + rawText.slice(0, 200)
+    };
+
+    let englishAnalysis;
+    let displayAnalysis;
     try {
-      analysis = JSON.parse(cleaned);
+      if (!jsonSlice) throw new Error('No JSON object found in response');
+      const parsed = JSON.parse(jsonSlice);
+      if (languageName) {
+        englishAnalysis = parsed.en || fallback;
+        displayAnalysis = parsed.translated || englishAnalysis;
+      } else {
+        englishAnalysis = parsed;
+        displayAnalysis = parsed;
+      }
     } catch (parseErr) {
       console.error('Failed to parse vision model response as JSON:', rawText);
-      analysis = {
-        detectedCropType: 'Unknown',
-        healthStatus: 'Uncertain',
-        potentialIssues: [],
-        notes: 'Could not parse a structured result from the analysis. Raw response: ' + rawText.slice(0, 200)
-      };
+      englishAnalysis = fallback;
+      displayAnalysis = fallback;
     }
 
-    // Log the analysis (useful for the dashboard later, and for debugging model output)
+    // Log the English version (useful for the dashboard later, and keeps
+    // stored data consistent regardless of what language any user picked)
     db.run(
       'INSERT INTO image_analyses (detected_crop, health_status, issues, notes) VALUES (?, ?, ?, ?)',
       [
-        analysis.detectedCropType,
-        analysis.healthStatus,
-        JSON.stringify(analysis.potentialIssues || []),
-        analysis.notes || null
+        englishAnalysis.detectedCropType,
+        englishAnalysis.healthStatus,
+        JSON.stringify(englishAnalysis.potentialIssues || []),
+        englishAnalysis.notes || null
       ]
     );
 
     res.json({
-      detectedCropType: analysis.detectedCropType,
-      healthStatus: analysis.healthStatus,
-      potentialIssues: analysis.potentialIssues || [],
-      notes: analysis.notes || ''
+      detectedCropType: displayAnalysis.detectedCropType,
+      healthStatus: displayAnalysis.healthStatus,
+      potentialIssues: displayAnalysis.potentialIssues || [],
+      notes: displayAnalysis.notes || '',
+      // English versions, kept alongside the display versions so the
+      // frontend's keyword-matching (mapAnalysisToObservationText in
+      // script.js) keeps working regardless of UI language.
+      detectedCropTypeEn: englishAnalysis.detectedCropType,
+      healthStatusEn: englishAnalysis.healthStatus,
+      potentialIssuesEn: englishAnalysis.potentialIssues || []
     });
 
   } catch (error) {
@@ -439,8 +611,9 @@ Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation", "
     res.status(500).json({ error: 'Failed to analyze image.' });
   }
 });
-app.get('/api/pest-alerts/:crop', (req, res) => {
+app.get('/api/pest-alerts/:crop', async (req, res) => {
   const cropName = req.params.crop;
+  const language = req.query.lang;
   const currentMonth = new Date().getMonth() + 1;
   let season = 'Summer';
   
@@ -454,10 +627,39 @@ app.get('/api/pest-alerts/:crop', (req, res) => {
        CASE WHEN season = ? THEN 0 ELSE 1 END,
        CASE severity WHEN 'High' THEN 0 WHEN 'Medium' THEN 1 WHEN 'Low' THEN 2 ELSE 3 END`,
     [`%${cropName}%`, season],
-    (err, rows) => {
+    async (err, rows) => {
       if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
+        return res.status(500).json({ error: err.message });
+      }
+      if (!language || language === 'en' || rows.length === 0) {
+        return res.json(rows);
+      }
+
+      try {
+        // Batch every row's translatable text into a single Gemini call
+        // (one request for the whole list, not one per pest). `severity`
+        // is deliberately excluded — the frontend uses it as a CSS class
+        // name (e.g. .toLowerCase() === 'high'), so translating it would
+        // break the styling.
+        const fieldsToTranslate = {};
+        rows.forEach((row, i) => {
+          fieldsToTranslate[`pest_name_${i}`] = row.pest_name;
+          fieldsToTranslate[`description_${i}`] = row.description;
+          fieldsToTranslate[`prevention_${i}`] = row.prevention;
+        });
+
+        const translated = await translateFields(fieldsToTranslate, language);
+
+        const localizedRows = rows.map((row, i) => ({
+          ...row,
+          pest_name: translated[`pest_name_${i}`] || row.pest_name,
+          description: translated[`description_${i}`] || row.description,
+          prevention: translated[`prevention_${i}`] || row.prevention
+        }));
+
+        res.json(localizedRows);
+      } catch (translateErr) {
+        console.error('Pest alert translation failed, returning English:', translateErr.message);
         res.json(rows);
       }
     }

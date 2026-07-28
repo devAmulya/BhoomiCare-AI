@@ -99,6 +99,7 @@ async function handleAnalyzePhoto() {
   try {
     const formData = new FormData();
     formData.append('crop_image', file);
+    formData.append('language', getCurrentLang());
 
     const response = await fetch('/api/analyze-crop-image', {
       method: 'POST',
@@ -127,8 +128,14 @@ async function handleAnalyzePhoto() {
     // Feed the result into the observations field so the advice engine
     // (which matches on keywords like "pest signs" / "yellowing leaves")
     // picks it up too, without overwriting anything the user already typed.
+    // Uses the English fields specifically — healthStatus/potentialIssues
+    // above may be translated for display, but the keyword matching below
+    // and the advice engine on the backend both expect English.
     const observationsField = document.getElementById('observations');
-    const mappedText = mapAnalysisToObservationText(data);
+    const mappedText = mapAnalysisToObservationText({
+      healthStatus: data.healthStatusEn,
+      potentialIssues: data.potentialIssuesEn
+    });
     if (mappedText) {
       observationsField.value = observationsField.value
         ? `${observationsField.value}; ${mappedText}`
@@ -175,7 +182,8 @@ async function handleFormSubmit(e) {
     location: formData.get('location').trim(),
     sowingDate: formData.get('sowingDate') || null,
     cropStage: formData.get('cropStage') || null,
-    observations: formData.get('observations') ? formData.get('observations').trim() : null
+    observations: formData.get('observations') ? formData.get('observations').trim() : null,
+    language: getCurrentLang()
   };
   
   // Validation
@@ -277,7 +285,7 @@ function displayRecommendations(recommendations) {
 
 async function loadPestAlerts(cropName) {
   try {
-    const response = await fetch(`/api/pest-alerts/${encodeURIComponent(cropName)}`);
+    const response = await fetch(`/api/pest-alerts/${encodeURIComponent(cropName)}?lang=${encodeURIComponent(getCurrentLang())}`);
     const pestData = await response.json();
     
     const pestContainer = document.getElementById('pestAlerts');
@@ -290,9 +298,9 @@ async function loadPestAlerts(cropName) {
     pestContainer.innerHTML = pestData.map(pest => `
       <div class="pest-alert">
         <div class="pest-name">${pest.pest_name}</div>
-        <span class="pest-severity ${pest.severity.toLowerCase()}">${pest.severity} Risk</span>
+        <span class="pest-severity ${pest.severity.toLowerCase()}">${t('severity_' + pest.severity.toLowerCase()) || pest.severity + ' Risk'}</span>
         <div class="pest-description">${pest.description}</div>
-        <div class="pest-prevention"><strong>Prevention:</strong> ${pest.prevention}</div>
+        <div class="pest-prevention"><strong>${t('pest_prevention_label')}</strong> ${pest.prevention}</div>
       </div>
     `).join('');
     

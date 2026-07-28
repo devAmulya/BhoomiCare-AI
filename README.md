@@ -21,19 +21,24 @@ conditions.
 - 🐛 **Pest Alerts** — seasonal pest/disease warnings from a seeded database,
   matched by crop and season
 - 🌐 **Multi-Language UI** — English, Hindi, Bengali, Tamil, Telugu, and
-  Marathi. Covers all static UI (labels, buttons, navigation, notifications).
-  AI-generated advice text itself stays in English for now — see note below
+  Marathi. Static UI translated via local dictionaries; AI-generated advice
+  and pest alert text translated on-demand via Gemini (see note below)
+
+> **Translation approach:** static UI text (labels, buttons, headers) uses
+> local dictionaries in `public/i18n/`. Advice text and pest alerts are
+> generated dynamically (crop × weather × observations is combinatorial),
+> so instead of pre-writing translations for every possible combination,
+> the already-generated English text is translated on-demand via Gemini
+> (same free-tier key used for photo analysis) when a non-English language
+> is selected. If translation fails for any reason (no key, rate limit),
+> it falls back to English rather than breaking the page. Pest severity
+> labels (High/Medium/Low) are translated via the static dictionary instead,
+> since the raw English value doubles as a CSS class name in the frontend.
+> As with any machine translation, a native-speaker review before real-world
+> use would be worthwhile, especially for agricultural advice.
+
 - 📊 **Query Dashboard** — tracks total queries and most-asked-about crops
 - 📱 **Responsive Design** — works on phone, tablet, and desktop
-
-> **Translation scope:** the UI chrome (labels, buttons, headers, status
-> messages) is fully translated. The dynamically-generated advice text
-> (irrigation/crop-care/health/pest recommendations) intentionally stays in
-> English — accurately translating agronomic advice that's composed on the
-> fly needs native-speaker review to avoid subtly wrong translated advice,
-> which is a separate, bigger effort than static UI translation. Translations
-> were AI-assisted; a native speaker review of each language before any
-> real-world use would be worthwhile.
 
 ## 🧭 Roadmap
 

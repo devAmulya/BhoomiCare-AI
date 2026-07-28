@@ -1,11 +1,10 @@
 // Lightweight i18n for BhoomiCare AI.
 //
-// Scope: translates all static UI chrome (labels, buttons, headers,
-// notifications). The AI-generated advice text itself (irrigation/pest/
-// health recommendations) intentionally stays in English for now —
-// translating dynamically-composed agronomic advice accurately across
-// 5 languages needs native-speaker review to avoid giving a farmer subtly
-// wrong advice, which is a separate, bigger effort.
+// Static UI chrome (labels, buttons, headers, notifications) is translated
+// via the dictionaries in this file. AI-generated advice text is translated
+// separately, on the backend, by asking Gemini to translate the already-
+// generated English advice into the selected language (see server.js
+// translateAdvice()) — script.js sends the language via getCurrentLang().
 
 (function () {
   const SUPPORTED_LANGS = ['en', 'hi', 'bn', 'ta', 'te', 'mr'];
@@ -25,7 +24,11 @@
     photo_analysis_failed: 'Analysis failed. Please try again.',
     pest_none: 'No specific pest alerts for your crop at this time. Continue regular monitoring.',
     pest_load_error: 'Unable to load pest alerts. Please check your internet connection.',
-    forecast_load_error: 'Unable to load weather forecast. Please check your internet connection.'
+    forecast_load_error: 'Unable to load weather forecast. Please check your internet connection.',
+    severity_high: 'High Risk',
+    severity_medium: 'Medium Risk',
+    severity_low: 'Low Risk',
+    pest_prevention_label: 'Prevention:'
   };
 
   let translations = {};
@@ -44,6 +47,12 @@
   // strings (notifications, status messages, etc.) with the same dictionary.
   window.t = function (key) {
     return translations[key] || FALLBACK_EN[key] || key;
+  };
+
+  // Exposed so script.js can send the selected language to the backend
+  // when submitting a crop query, so advice text can be translated too.
+  window.getCurrentLang = function () {
+    return currentLang;
   };
 
   function applyTranslations() {
