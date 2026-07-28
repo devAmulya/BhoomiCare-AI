@@ -654,6 +654,8 @@ Keep each entry in potentialIssues short (2-4 words, e.g. "Aphid Infestation", "
     res.status(500).json({ error: 'Failed to analyze image.' });
   }
 });
+
+// Get pest alerts for specific crop
 app.get('/api/pest-alerts/:crop', async (req, res) => {
   const cropName = req.params.crop;
   const language = req.query.lang;
