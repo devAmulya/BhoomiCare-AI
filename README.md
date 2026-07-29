@@ -27,7 +27,7 @@ support.
 
 ## Live Demo
 
-_[Add your deployed URL here]_
+_[https://bhoomicare-ai-durg.onrender.com/](https://bhoomicare-ai-durg.onrender.com/)_
 
 ## Getting Started
 
